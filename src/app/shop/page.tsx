@@ -1,7 +1,7 @@
 
 'use client'
 
-import React, { useState, useMemo, useEffect } from 'react'
+import React, { useState, useMemo, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Sidebar } from '@/components/Sidebar'
 import ProductCard from '@/features/store/components/ProductCard'
@@ -10,7 +10,7 @@ import { useLanguage } from '@/components/LanguageProvider'
 import { supabase } from '@/lib/supabase/client'
 import { Product } from '@/store/useCartStore'
 
-export default function ShopPage() {
+function ShopContent() {
   const { t } = useLanguage()
   const searchParams = useSearchParams()
   // const { isFavorite, favorites } = useFavorites() // Temporarily disabled sorting by favorites to simplify first pass
@@ -52,14 +52,6 @@ export default function ShopPage() {
       setLoading(false)
     }
   }
-
-  // Memoize filtered products (Client side sorting/filtering if needed, currently mostly handled by DB)
-  /* 
-  const filteredProducts = useMemo(() => {
-     // ... logic if needed later
-     return products
-  }, [products]) 
-  */
 
   return (
     <div className="min-h-screen bg-background pb-20 pt-24">      
@@ -109,5 +101,13 @@ export default function ShopPage() {
          </div>
       </div>
     </div>
+  )
+}
+
+export default function ShopPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-background pt-32 text-center">Loading Shop...</div>}>
+      <ShopContent />
+    </Suspense>
   )
 }

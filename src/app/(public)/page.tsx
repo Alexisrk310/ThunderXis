@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, Suspense } from 'react'
 import Carousel from '@/components/Carousel'
 import { Sidebar } from '@/components/Sidebar'
 import ProductCard from '@/features/store/components/ProductCard'
@@ -26,7 +26,7 @@ export default function ShopPage() {
           .limit(8)
         
         if (data) {
-          setProducts(data as Product[])
+           setProducts(data as Product[])
         }
       } catch (error) {
         console.error('Error fetching new arrivals:', error)
@@ -49,7 +49,9 @@ export default function ShopPage() {
             
             {/* Sidebar Filters */}
             <div className="sticky top-24 h-fit hidden md:block">
-                <Sidebar />
+                <Suspense fallback={<div className="w-64 h-96 bg-muted/20 animate-pulse rounded-2xl" />}>
+                    <Sidebar />
+                </Suspense>
             </div>
 
             {/* Product Grid */}
