@@ -25,6 +25,7 @@ export async function POST(req: Request) {
         // Assuming item.id works. If your cart stores Supabase ID as 'id', this is correct.
         // Also assuming 'quantity' is passed in the item object.
         if (!item.id || !item.quantity) continue;
+        if (item.id === 'shipping') continue; // Skip shipping item validation
 
         const { data: product, error } = await supabase
             .from('products')
