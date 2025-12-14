@@ -150,17 +150,17 @@ export function Sidebar({ className = "" }: { className?: string }) {
                 </h4>
                 <div className="flex flex-col gap-0.5">
                    {['T-Shirts', 'Hoodies', 'Pants', 'Accessories', 'Caps'].map(cat => (
-                      <Link 
+                      <button 
                         key={cat} 
-                        href={`/shop?category=${cat.toLowerCase()}`} 
-                         className={`block text-xs py-1.5 px-2 rounded-md transition-all ${
+                        onClick={() => updateFilter('category', isActive('category', cat.toLowerCase()) ? null : cat.toLowerCase())}
+                         className={`block w-full text-left text-xs py-1.5 px-2 rounded-md transition-all ${
                             isActive('category', cat.toLowerCase()) 
                                 ? 'bg-primary/10 text-primary font-bold translate-x-1' 
                                 : 'text-muted-foreground hover:text-foreground hover:bg-muted'
                         }`}
                       >
                          {t(`cat.${cat.toLowerCase()}`)}
-                      </Link>
+                      </button>
                    ))}
                 </div>
              </div>

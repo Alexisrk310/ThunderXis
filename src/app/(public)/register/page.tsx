@@ -44,6 +44,28 @@ export default function RegisterPage() {
         setLoading(true);
         setError(null);
 
+        // Client-side Validation
+        if (!formData.name.trim()) {
+            setError(t('auth.error.name_required'));
+            setLoading(false);
+            return;
+        }
+        if (!formData.email.trim()) {
+            setError(t('auth.error.email_required'));
+            setLoading(false);
+            return;
+        }
+        if (!formData.password) {
+             setError(t('auth.error.password_required'));
+             setLoading(false);
+             return;
+        }
+        if (formData.password.length < 6) {
+            setError(t('auth.error.password_length'));
+            setLoading(false);
+            return;
+        }
+
 		const { error } = await supabase.auth.signUp({
             email: formData.email,
             password: formData.password,
@@ -59,7 +81,7 @@ export default function RegisterPage() {
             setError(error.message);
             setLoading(false);
         } else {
-            router.push('/login?message=Account created! Please check your email.'); 
+            router.push(`/login?message=${t('auth.success.created')}`); 
         }
 	}
 
@@ -108,14 +130,14 @@ export default function RegisterPage() {
                                 </div>
                             )}
 
-                             <div className="space-y-2">
+                            <div className="space-y-2">
                                 <Label htmlFor="name" className="text-sm font-medium">
                                     {t('auth.name')}
                                 </Label>
                                 <Input
                                     id="name"
                                     type="text"
-                                    placeholder="John Doe"
+                                    placeholder={t('auth.placeholder.name')}
                                     value={formData.name}
                                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                     required
@@ -131,7 +153,7 @@ export default function RegisterPage() {
                                 <Input
                                     id="email"
                                     type="email"
-                                    placeholder="tu@correo.com"
+                                    placeholder={t('auth.placeholder.email')}
                                     value={formData.email}
                                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                                     required
@@ -147,7 +169,7 @@ export default function RegisterPage() {
                                 <Input
                                     id="password"
                                     type="password"
-                                    placeholder="••••••••"
+                                    placeholder={t('auth.placeholder.password')}
                                     value={formData.password}
                                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                                     required

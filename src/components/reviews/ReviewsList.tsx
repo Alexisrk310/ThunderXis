@@ -89,7 +89,7 @@ export default function ReviewsList({ productId }: { productId: string }) {
                                         <User className="w-5 h-5 text-primary" />
                                     </div>
                                     <div>
-                                        <p className="font-bold text-sm">{review.username || 'Anonymous'}</p>
+                                        <p className="font-bold text-sm">{review.username || t('dash.reviews.anon')}</p>
                                         <div className="flex gap-0.5">
                                             {[...Array(5)].map((_, i) => (
                                                 <Star 
@@ -109,7 +109,7 @@ export default function ReviewsList({ productId }: { productId: string }) {
                             {/* Admin Reply */}
                             {review.reply && (
                                 <div className="mt-3 ml-4 p-3 bg-muted/50 rounded-lg border-l-2 border-primary text-sm">
-                                    <p className="font-bold text-xs text-primary mb-1">ThunderXis Response:</p>
+                                    <p className="font-bold text-xs text-primary mb-1">{t('dash.reviews.thunder_response')}</p>
                                     <p className="text-muted-foreground">{review.reply}</p>
                                 </div>
                             )}

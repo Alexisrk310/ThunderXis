@@ -17,21 +17,21 @@ export default function Carousel() {
     {
       id: 1,
       image: '/images/hero_1.png', 
-      title: 'NEON DYSTOPIA',
+      title: t('carousel.neon_dystopia'),
       subtitle: t('hero.subtitle'),
       cta: t('hero.cta')
     },
     {
       id: 2,
       image: '/images/hero_2.png', 
-      title: 'NOIR SERIES',
+      title: t('carousel.noir_series'),
       subtitle: t('hero.subtitle'),
       cta: t('hero.cta')
     },
     {
       id: 3,
       image: '/images/hero_3.png', 
-      title: 'URBAN ARMOR',
+      title: t('carousel.urban_armor'),
       subtitle: t('hero.subtitle'),
       cta: t('hero.cta')
     }

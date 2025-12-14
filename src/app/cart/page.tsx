@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { motion } from 'framer-motion'
@@ -11,7 +11,22 @@ import { useLanguage } from '@/components/LanguageProvider'
 import { useToast } from '@/components/ui/Toast' // Custom Toast
 import { supabase } from '@/lib/supabase/client'
 import { v4 as uuidv4 } from 'uuid'
-import { SHIPPING_RATES, DEFAULT_SHIPPING_COST } from '@/config/shipping'
+export const SHIPPING_RATES: { [key: string]: number } = {
+  'Bogotá': 8000,
+  'Medellín': 12000,
+  'Cali': 12000,
+  'Barranquilla': 15000,
+  'Cartagena': 15000,
+  'Bucaramanga': 12000,
+  'Pereira': 12000,
+  'Manizales': 12000,
+  'Cúcuta': 15000,
+  'Ibagué': 10000,
+  'Villavicencio': 10000,
+  'Santa Marta': 15000,
+}
+
+export const DEFAULT_SHIPPING_COST = 20000
 
 export default function CartPage() {
   const { items, removeItem, updateQuantity, total } = useCartStore()
@@ -24,10 +39,40 @@ export default function CartPage() {
   // Shipping Form State
   const [formData, setFormData] = useState({
     name: '',
+    email: '',
     address: '',
+    neighborhood: '',
     city: '',
     phone: '',
   })
+
+  useEffect(() => {
+    // Check for user and pre-fill address
+    const checkUserAndAddress = async () => {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user) {
+            const { data: address } = await supabase
+                .from('addresses')
+                .select('*')
+                .eq('user_id', user.id)
+                .eq('is_default', true)
+                .single()
+            
+            if (address) {
+                setFormData(prev => ({
+                    ...prev,
+                    name: address.recipient_name,
+                    phone: address.phone,
+                    address: address.address_line1,
+                    neighborhood: address.neighborhood || '',
+                    city: address.city,
+                    email: user.email || '' // Prefill email
+                }))
+            }
+        }
+    }
+    checkUserAndAddress()
+  }, [])
 
   // Calculate dynamic shipping cost
   const shippingCost = useMemo(() => {
@@ -53,7 +98,7 @@ export default function CartPage() {
 
   const handleCheckout = async () => {
     // Validate Form
-    if (!formData.name || !formData.address || !formData.city || !formData.phone) {
+    if (!formData.name || !formData.email || !formData.address || !formData.city || !formData.phone) {
         addToast(`${t('checkout.missing_fields')}`, 'error')
         return
     }
@@ -71,7 +116,10 @@ export default function CartPage() {
 
       const orderId = uuidv4()
       const finalTotal = total() + shippingCost
-      
+      const fullAddress = formData.neighborhood 
+        ? `${formData.address}, ${formData.neighborhood}` 
+        : formData.address
+
       const { error: matchError } = await supabase
         .from('orders')
         .insert({
@@ -80,7 +128,8 @@ export default function CartPage() {
             status: 'pending',
             total: finalTotal,
             customer_name: formData.name,
-            shipping_address: formData.address,
+            customer_email: formData.email, // Save email
+            shipping_address: fullAddress, // Combine address + neighborhood
             city: formData.city,
             phone: formData.phone,
             shipping_cost: shippingCost
@@ -107,10 +156,6 @@ export default function CartPage() {
 
       if (itemsError) {
           console.error('Error inserting items:', itemsError)
-          // Look into reverting order here if strictly transactional, 
-          // or just proceed and rely on Support. 
-          // For now, we log and proceed but maybe warn user?
-          // throw new Error('Failed to save order items') 
       }
 
       // 2. Create MP Preference linked to Order
@@ -120,7 +165,7 @@ export default function CartPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ 
-            items: [...items, { id: 'shipping', name: 'Shipping Cost', price: shippingCost, quantity: 1 }],
+            items: [...items, { id: 'shipping', name: t('cart.shipping_item_name'), price: shippingCost, quantity: 1 }],
             orderId 
         }),
       })
@@ -138,8 +183,8 @@ export default function CartPage() {
     } catch (error: any) {
       console.error('Full Checkout Error:', JSON.stringify(error, null, 2))
       console.error('Error Details:', error)
-      const errorMsg = error?.message || error?.error || 'An error occurred during checkout'
-      addToast(`Error: ${errorMsg}`, 'error')
+      const errorMsg = error?.message || error?.error || t('cart.checkout_error_default')
+      addToast(`${t('cart.error_prefix')}${errorMsg}`, 'error')
     } finally {
       setLoading(false)
     }
@@ -235,13 +280,30 @@ export default function CartPage() {
                                 />
                             </div>
                             <div>
+                                <label className="text-xs font-bold uppercase text-muted-foreground mb-1 block">{t('auth.email')}</label>
+                                <input 
+                                    type="email" 
+                                    value={formData.email}
+                                    onChange={(e) => setFormData({...formData, email: e.target.value})}
+                                    className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm focus:border-primary focus:outline-none"
+                                    placeholder={t('auth.email_placeholder')}
+                                />
+                            </div>
+                            <div>
                                 <label className="text-xs font-bold uppercase text-muted-foreground mb-1 block">{t('checkout.address')}</label>
                                 <input 
                                     type="text" 
                                     value={formData.address}
                                     onChange={(e) => setFormData({...formData, address: e.target.value})}
-                                    className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm focus:border-primary focus:outline-none"
+                                    className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm focus:border-primary focus:outline-none mb-2"
                                     placeholder={t('checkout.placeholder_address')}
+                                />
+                                <input 
+                                    type="text" 
+                                    value={formData.neighborhood}
+                                    onChange={(e) => setFormData({...formData, neighborhood: e.target.value})}
+                                    className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm focus:border-primary focus:outline-none"
+                                    placeholder={t('address.neighborhood_placeholder')}
                                 />
                             </div>
                             <div className="grid grid-cols-2 gap-4">
@@ -286,7 +348,7 @@ export default function CartPage() {
                         <span className={!formData.city ? 'text-xs italic' : ''}>
                             {formData.city 
                                 ? new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP' }).format(shippingCost)
-                                : t('checkout.select_city_calc') || 'Select city'
+                                : t('checkout.select_city_calc')
                             }
                         </span>
                         </div>

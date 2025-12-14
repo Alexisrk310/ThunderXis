@@ -41,20 +41,39 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
     fetchRating()
   }, [product.id])
 
+  const checkStock = (size: string) => {
+    if (product.stock_by_size && typeof product.stock_by_size === 'object') {
+        return (product.stock_by_size[size] || 0) > 0
+    }
+    return (product.stock || 0) > 0
+  }
+
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
     
-    addItem({
+    if (!checkStock(selectedSize)) {
+        addToast(t('cart.error_stock_limit'), 'error')
+        return
+    }
+
+    const availableStock = product.stock_by_size ? (product.stock_by_size[selectedSize] || 0) : product.stock
+
+    const success = addItem({
       id: product.id,
       name: product.name,
       price: product.price,
       image_url: product.images?.[0] || product.image_url || '/placeholder.png',
       description: product.description,
-      size: selectedSize
+      size: selectedSize,
+      stock: availableStock // Pass specific size stock
     })
     
-    addToast(`${t('cart.added_success')} (${selectedSize})`, 'success')
+    if (success) {
+        addToast(`${t('cart.added_success')} (${selectedSize})`, 'success')
+    } else {
+        addToast(t('cart.stock_limit_reached'), 'error')
+    }
   }
 
   return (
@@ -85,7 +104,7 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
             e.stopPropagation();
             toggleFavorite(product.id, product)
         }}
-        className={`absolute top-3 right-3 z-50 p-2 rounded-full backdrop-blur-md shadow-lg transition-all duration-300 group-hover:scale-110 ${isFavorite(product.id) ? 'bg-background border border-border text-red-500' : 'bg-black/30 text-white hover:bg-white/20'}`}
+        className={`absolute top-3 right-3 z-20 p-2 rounded-full backdrop-blur-md shadow-lg transition-all duration-300 group-hover:scale-110 ${isFavorite(product.id) ? 'bg-background border border-border text-red-500' : 'bg-black/30 text-white hover:bg-white/20'}`}
       >
         <Heart className={`w-5 h-5 ${isFavorite(product.id) ? 'fill-red-500 text-red-500' : 'text-white'}`} />
       </button>
@@ -106,23 +125,32 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
             
             {/* Size Selector */}
             <div className="flex justify-center gap-1 bg-black/40 p-1.5 rounded-xl backdrop-blur-md" onClick={(e) => e.preventDefault()}>
-                {(product.sizes?.length ? product.sizes : ['S', 'M', 'L', 'XL']).map(size => (
-                    <button
-                        key={size}
-                        onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            setSelectedSize(size)
-                        }}
-                        className={`w-8 h-8 text-xs font-bold rounded-lg transition-all ${
-                            selectedSize === size 
-                                ? 'bg-primary text-white shadow-lg shadow-primary/25' 
-                                : 'text-white/80 hover:bg-white/10'
-                        }`}
-                    >
-                        {size}
-                    </button>
-                ))}
+                {(product.sizes?.length ? product.sizes : ['S', 'M', 'L', 'XL']).map(size => {
+                    const isAvailable = product.stock_by_size ? (product.stock_by_size[size] || 0) > 0 : (product.stock || 0) > 0
+                    return (
+                        <button
+                            key={size}
+                            disabled={!isAvailable}
+                            onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                if (isAvailable) setSelectedSize(size)
+                            }}
+                            className={`w-8 h-8 text-xs font-bold rounded-lg transition-all relative ${
+                                selectedSize === size 
+                                    ? 'bg-primary text-white shadow-lg shadow-primary/25' 
+                                    : isAvailable ? 'text-white/80 hover:bg-white/10' : 'text-white/30 cursor-not-allowed'
+                            }`}
+                        >
+                            {size}
+                            {!isAvailable && (
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                    <div className="w-full h-px bg-red-500/80 rotate-45 transform origin-center"></div>
+                                </div>
+                            )}
+                        </button>
+                    )
+                })}
             </div>
 
             <div className="flex gap-2">
@@ -145,8 +173,8 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
       <div className="p-5">
         <div className="flex justify-between items-start mb-2">
           <div className="flex-1 pr-2">
-            <p className="text-xs text-primary font-medium tracking-wider uppercase mb-1">{product.category || 'Streetwear'}</p>
-            <h3 className="font-bold text-lg leading-tight group-hover:text-primary transition-colors text-foreground">{product.name}</h3>
+            <p className="text-xs text-primary font-medium tracking-wider uppercase mb-1">{t(`cat.${(product.category || 'streetwear').toLowerCase()}`)}</p>
+            <h3 className="font-bold text-lg leading-tight group-hover:text-primary transition-colors text-foreground">{t(product.name)}</h3>
             
             {/* Rating Stars - Always visible */}
             <div className="flex items-center gap-1 mt-1">
@@ -179,7 +207,7 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
              )}
           </div>
         </div>
-        <p className="text-sm text-muted-foreground line-clamp-2">{product.description}</p>
+        <p className="text-sm text-muted-foreground line-clamp-2">{t(product.description)}</p>
       </div>
     </motion.div>
   )

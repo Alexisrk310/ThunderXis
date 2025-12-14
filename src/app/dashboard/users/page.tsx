@@ -76,7 +76,13 @@ export default function DashboardUsers() {
       const usersWithStats = profiles?.map((profile: any) => {
         const userOrders = orders?.filter(o => o.user_id === profile.id) || []
         
-        const totalSpent = userOrders.reduce((acc, order) => acc + (order.total || 0), 0)
+        const totalSpent = userOrders.reduce((acc, order) => {
+          // Only count "real" money from paid/fulfilled orders
+          if (['paid', 'shipped', 'delivered'].includes(order.status || '')) {
+            return acc + (order.total || 0)
+          }
+          return acc
+        }, 0)
         const orderCount = userOrders.length
         
         // Find last active date (latest order date)
@@ -253,7 +259,7 @@ export default function DashboardUsers() {
             title={t('dash.export_excel')}
           >
             <FileSpreadsheet className="w-5 h-5" />
-            <span className="hidden md:inline">Excel</span>
+            <span className="hidden md:inline">{t('dash.excel_export')}</span>
           </button>
         </div>
       </div>
@@ -297,7 +303,7 @@ export default function DashboardUsers() {
                   </th>
                   <th className="px-6 py-4">
                     <button onClick={() => handleSort('lastActive')} className="flex items-center gap-1 hover:text-foreground transition-colors">
-                      Ult. Act.
+                      {t('dash.last_active_short')}
                       <ArrowUpDown className="w-3 h-3" />
                     </button>
                   </th>
@@ -327,7 +333,7 @@ export default function DashboardUsers() {
                       ${user.totalSpent?.toLocaleString()}
                     </td>
                     <td className="px-6 py-4">
-                      <span className="bg-secondary px-2 py-1 rounded-md text-xs font-semibold">
+                      <span className="text-sm font-medium">
                         {user.orderCount}
                       </span>
                     </td>
@@ -386,7 +392,7 @@ export default function DashboardUsers() {
             <p className="text-2xl font-black text-purple-500">{users.filter(u => u.role === 'owner').length}</p>
           </div>
           <div className="bg-card/50 border border-border/50 rounded-xl p-4">
-            <p className="text-sm text-muted-foreground">LTV Total</p>
+            <p className="text-sm text-muted-foreground">{t('dash.ltv_total')}</p>
             <p className="text-2xl font-black text-green-500">
               ${users.reduce((acc, u) => acc + u.totalSpent, 0).toLocaleString()}
             </p>

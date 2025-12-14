@@ -12,6 +12,7 @@ export interface Product {
     variants?: ProductVariant[];
     isNew?: boolean;
     gender?: 'Men' | 'Women' | 'Unisex';
+    stock_by_size?: Record<string, number>;
 }
 
 export interface ProductVariant {

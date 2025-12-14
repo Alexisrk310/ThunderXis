@@ -4,19 +4,67 @@ import React, { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import { useLanguage } from '@/components/LanguageProvider'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Search, Truck, CheckCircle, Clock, AlertCircle, Loader2, Package, X, AlertTriangle } from 'lucide-react'
+import { Search, Truck, CheckCircle, Clock, AlertCircle, Loader2, Package, X, AlertTriangle, Eye, MapPin, Phone, Calendar, MoreVertical, Filter, ChevronDown, User, Mail, CreditCard } from 'lucide-react'
 import { OrderCardSkeleton } from '@/components/dashboard/skeletons'
+import Image from 'next/image'
+import jsPDF from 'jspdf'
+import autoTable from 'jspdf-autotable'
+
+interface OrderItem {
+  id: string
+  quantity: number
+  price: number
+  product_name: string
+  size?: string
+  products?: {
+    image_url: string
+    images?: string[]
+    name: string
+  }
+}
 
 interface Order {
   id: string
   created_at: string
   customer_name: string
+  customer_email?: string
   shipping_address: string
   city: string
   phone: string
   total: number
   status: string
   user_id: string
+  order_items: OrderItem[]
+}
+
+const ORDER_STATUSES = ['pending', 'paid', 'shipped', 'delivered', 'cancelled']
+
+const ActionTooltip = ({ children, text }: { children: React.ReactNode, text: string }) => {
+  const [isVisible, setIsVisible] = useState(false)
+
+  return (
+    <div className="relative flex items-center justify-center" 
+      onMouseEnter={() => setIsVisible(true)} 
+      onMouseLeave={() => setIsVisible(false)}
+      onTouchStart={() => setIsVisible(true)}
+      onTouchEnd={() => setIsVisible(false)}
+    >
+      <AnimatePresence>
+        {isVisible && (
+          <motion.div
+            initial={{ opacity: 0, y: 5 }}
+            animate={{ opacity: 1, y: -8 }}
+            exit={{ opacity: 0 }}
+            className="absolute bottom-full mb-2 whitespace-nowrap bg-foreground text-background text-xs font-bold px-2 py-1 rounded shadow-lg z-10 pointer-events-none"
+          >
+            {text}
+            <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-foreground"></div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      {children}
+    </div>
+  )
 }
 
 export default function DashboardOrders() {
@@ -27,8 +75,9 @@ export default function DashboardOrders() {
   const [searchQuery, setSearchQuery] = useState('')
   const [updatingOrder, setUpdatingOrder] = useState<string | null>(null)
   
-  // Confirmation Modal State
+  // Modal States
   const [confirmData, setConfirmData] = useState<{ id: string, status: string } | null>(null)
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
 
   useEffect(() => {
     fetchOrders()
@@ -39,13 +88,28 @@ export default function DashboardOrders() {
       setLoading(true)
       const { data, error } = await supabase
         .from('orders')
-        .select('*')
+        .select(`
+          *,
+          order_items!fk_order_items_orders (
+            id,
+            quantity,
+            price,
+            product_name,
+            size,
+            products!fk_order_items_products (
+              image_url,
+              images,
+              name
+            )
+          )
+        `)
         .order('created_at', { ascending: false })
 
       if (error) throw error
       setOrders(data || [])
     } catch (error) {
       console.error('Error fetching orders:', error)
+      if (error) console.error('Error Details:', (error as any).message, (error as any).details, (error as any).hint)
     } finally {
       setLoading(false)
     }
@@ -60,7 +124,7 @@ export default function DashboardOrders() {
     
     const { id, status } = confirmData
     setUpdatingOrder(id)
-    setConfirmData(null) // Close modal immediately
+    setConfirmData(null)
 
     try {
       const { error } = await supabase
@@ -70,6 +134,11 @@ export default function DashboardOrders() {
 
       if (!error) {
         await fetchOrders()
+          // Update selected order if open
+        if (selectedOrder && selectedOrder.id === id) {
+             const updated = orders.find(o => o.id === id)
+             if (updated) setSelectedOrder({...updated, status})
+        }
       } else {
         alert(t('dash.error_update_order'))
       }
@@ -92,217 +161,489 @@ export default function DashboardOrders() {
 
   const getStatusColor = (status: string) => {
     switch(normalizeStatus(status)) {
-      case 'pending': return 'bg-yellow-100 text-yellow-700 border-yellow-300'
-      case 'paid': return 'bg-blue-100 text-blue-700 border-blue-300'
-      case 'shipped': return 'bg-purple-100 text-purple-700 border-purple-300'
-      case 'delivered': return 'bg-green-100 text-green-700 border-green-300'
-      case 'cancelled': return 'bg-red-100 text-red-700 border-red-300'
-      default: return 'bg-gray-100 text-gray-700 border-gray-300'
+      case 'pending': return 'bg-yellow-50 text-yellow-700 ring-1 ring-inset ring-yellow-600/20'
+      case 'paid': return 'bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-700/10'
+      case 'shipped': return 'bg-purple-50 text-purple-700 ring-1 ring-inset ring-purple-700/10'
+      case 'delivered': return 'bg-green-50 text-green-700 ring-1 ring-inset ring-green-600/20'
+      case 'cancelled': return 'bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/10'
+      default: return 'bg-gray-50 text-gray-600 ring-1 ring-inset ring-gray-500/10'
     }
   }
 
-  const getStatusIcon = (status: string) => {
-    switch(normalizeStatus(status)) {
-      case 'pending': return Clock
-      case 'paid': return Package
-      case 'shipped': return Truck
-      case 'delivered': return CheckCircle
-      case 'cancelled': return AlertCircle
-      default: return Clock
-    }
+  const getStatusDot = (status: string) => {
+     switch(normalizeStatus(status)) {
+        case 'pending': return 'bg-yellow-500'
+        case 'paid': return 'bg-blue-500'
+        case 'shipped': return 'bg-purple-500'
+        case 'delivered': return 'bg-green-500'
+        case 'cancelled': return 'bg-red-500'
+        default: return 'bg-gray-500'
+     }
   }
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(amount)
   }
 
+  const downloadInvoicePDF = (order: Order) => {
+    const doc = new jsPDF()
+    
+    // -- Header --
+    doc.setFillColor(20, 20, 20) // Dark header
+    doc.rect(0, 0, 210, 40, 'F')
+    
+    doc.setTextColor(255, 255, 255)
+    doc.setFontSize(22)
+    doc.setFont('helvetica', 'bold')
+    doc.text('FACTURA DE VENTA', 20, 25)
+    
+    doc.setFontSize(10)
+    doc.setFont('helvetica', 'normal')
+    doc.text(`Orden #${order.id.slice(0, 8).toUpperCase()}`, 190, 25, { align: 'right' })
+
+    // -- Brand / Company Info (Placeholder) --
+    doc.setTextColor(0, 0, 0)
+    doc.setFontSize(12)
+    doc.setFont('helvetica', 'bold')
+    doc.text('NOMADA STORE', 20, 55)
+    
+    doc.setFontSize(9)
+    doc.setFont('helvetica', 'normal')
+    doc.text('Calle 123 # 45 - 67', 20, 60)
+    doc.text('Bogotá, Colombia', 20, 64)
+    doc.text('NIT: 900.000.000-1', 20, 68)
+    doc.text('info@nomadastore.com', 20, 72)
+
+    // -- Customer Info --
+    doc.setFontSize(12)
+    doc.setFont('helvetica', 'bold')
+    doc.text('CLIENTE', 120, 55)
+    
+    doc.setFontSize(9)
+    doc.setFont('helvetica', 'normal')
+    doc.text(order.customer_name, 120, 60)
+    if (order.customer_email) doc.text(order.customer_email, 120, 64)
+    doc.text(order.shipping_address, 120, 68)
+    doc.text(`${order.city} - Tel: ${order.phone}`, 120, 72)
+    
+    // -- Dates --
+    doc.text(`Fecha: ${new Date(order.created_at).toLocaleDateString('es-CO')}`, 20, 85)
+    doc.text(`Estado: ${t(`dash.${order.status}`).toUpperCase()}`, 120, 85)
+
+    // -- Table --
+    const tableColumn = [t('dash.table_product'), t('dash.table_qty'), t('dash.table_price'), t('dash.table_total')]
+    const tableRows: any[] = []
+
+    order.order_items.forEach(item => {
+        const itemData = [
+            `${item.product_name} ${item.size ? `(${item.size})` : ''}`,
+            item.quantity,
+            formatCurrency(item.price),
+            formatCurrency(item.price * item.quantity)
+        ]
+        tableRows.push(itemData)
+    })
+
+    autoTable(doc, {
+        head: [tableColumn],
+        body: tableRows,
+        startY: 95,
+        theme: 'grid',
+        headStyles: { fillColor: [40, 40, 40], textColor: 255, fontStyle: 'bold' },
+        styles: { fontSize: 9, cellPadding: 3 },
+        columnStyles: { 0: { cellWidth: 'auto' }, 1: { halign: 'center' }, 2: { halign: 'right' }, 3: { halign: 'right' } }
+    })
+
+    // -- Totals --
+    const finalY = (doc as any).lastAutoTable.finalY + 10
+    
+    doc.setFontSize(10)
+    doc.text(`${t('checkout.subtotal')}:`, 140, finalY)
+    doc.text(formatCurrency(order.total), 190, finalY, { align: 'right' })
+    
+    doc.text(`${t('checkout.shipping_cost')}:`, 140, finalY + 6)
+    doc.setTextColor(34, 197, 94) // Green
+    doc.text(t('dash.included'), 190, finalY + 6, { align: 'right' })
+    
+    doc.setTextColor(0, 0, 0)
+    doc.setFontSize(14)
+    doc.setFont('helvetica', 'bold')
+    doc.text(`${t('checkout.total')}:`, 140, finalY + 14)
+    doc.text(formatCurrency(order.total), 190, finalY + 14, { align: 'right' })
+
+    // -- Footer --
+    doc.setFontSize(8)
+    doc.setTextColor(100, 100, 100)
+    doc.text('Gracias por su compra.', 105, 280, { align: 'center' })
+    doc.text('Esta factura electrónica se genera por computador.', 105, 285, { align: 'center' })
+
+    doc.save(`Factura_Nomada_${order.id.slice(0, 8)}.pdf`)
+  }
+
   return (
-    <div className="space-y-6 relative">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-6 border-b border-border">
+    <div className="space-y-8 relative">
+      {/* Header Section */}
+      <div className="flex flex-col md:flex-row justify-between items-end gap-6 pb-6 border-b border-border/60">
         <div>
-          <h1 className="text-3xl font-bold text-foreground mb-1">{t('dash.orders_management')}</h1>
-          <p className="text-sm text-muted-foreground">{t('dash.orders_desc')}</p>
+          <h1 className="text-4xl font-black text-foreground tracking-tight mb-2">{t('dash.orders_management')}</h1>
+          <p className="text-muted-foreground font-medium flex items-center gap-2">
+            <span className="inline-block w-2 h-2 rounded-full bg-primary/50"></span>
+            {t('dash.orders_desc')}
+          </p>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="text-sm">
-            <span className="font-bold text-2xl text-foreground">{orders.length}</span>
-            <span className="text-muted-foreground ml-1">{t('dash.total_orders')}</span>
-          </div>
+        <div className="flex items-center gap-4 bg-card px-4 py-2 rounded-2xl border border-border shadow-sm">
+           <Package className="w-8 h-8 text-primary/80" />
+           <div className="flex flex-col">
+              <span className="text-xs text-muted-foreground font-bold uppercase tracking-wider">{t('dash.total_orders')}</span>
+              <span className="text-2xl font-black text-foreground leading-none">{orders.length}</span>
+           </div>
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-col md:flex-row gap-4">
-        <div className="relative flex-1">
+      {/* Controls Section */}
+      <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+        <div className="flex flex-wrap gap-3 p-1 rounded-xl overflow-x-auto">
+          {[
+            { id: 'all', icon: Filter, label: t('dash.all'), color: 'bg-muted/50 text-muted-foreground ring-1 ring-inset ring-gray-500/10' },
+            { id: 'pending', icon: Clock, label: t('dash.pending'), color: 'bg-yellow-50 text-yellow-700 ring-1 ring-inset ring-yellow-600/20' },
+            { id: 'paid', icon: CreditCard, label: t('dash.paid'), color: 'bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-700/10' },
+            { id: 'shipped', icon: Truck, label: t('dash.shipped'), color: 'bg-purple-50 text-purple-700 ring-1 ring-inset ring-purple-700/10' },
+            { id: 'delivered', icon: CheckCircle, label: t('dash.delivered'), color: 'bg-green-50 text-green-700 ring-1 ring-inset ring-green-600/20' },
+            { id: 'cancelled', icon: X, label: t('dash.cancelled'), color: 'bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/10' },
+          ].map((item) => {
+            const Icon = item.icon
+            const isActive = filter === item.id
+            return (
+              <button
+                key={item.id}
+                onClick={() => setFilter(item.id)}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wide transition-all border ${
+                  isActive 
+                    ? `${item.color} shadow-md ring-1 ring-inset ring-black/5` 
+                    : 'bg-background border-border text-muted-foreground hover:bg-muted/50'
+                }`}
+              >
+                <Icon className={`w-4 h-4 ${isActive ? 'opacity-100' : 'opacity-70'}`} />
+                {item.label}
+              </button>
+            )
+          })}
+        </div>
+        
+        <div className="relative w-full md:w-auto md:min-w-[300px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <input 
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder={t('dash.search_orders')} 
-            className="w-full pl-10 bg-background border border-border rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+            className="w-full pl-10 pr-4 py-2.5 bg-background border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all font-medium"
           />
-        </div>
-        <div className="flex gap-2 bg-card border border-border rounded-lg p-1">
-          {['all', 'pending', 'paid', 'shipped', 'delivered'].map(f => (
-            <button
-              key={f}
-              onClick={() => setFilter(f)}
-              className={`px-4 py-1.5 rounded-md text-sm font-medium capitalize transition-all ${
-                filter === f 
-                  ? 'bg-primary text-white shadow-sm' 
-                  : 'text-muted-foreground hover:text-foreground hover:bg-muted'
-              }`}
-            >
-              {t(`dash.${f}`)}
-            </button>
-          ))}
         </div>
       </div>
 
-      {/* Orders List */}
+      {/* Modern Table Layout (Desktop) */}
       {loading ? (
         <div className="grid gap-4">
-          {[...Array(5)].map((_, i) => (
-            <OrderCardSkeleton key={i} />
-          ))}
+          {[...Array(5)].map((_, i) => <OrderCardSkeleton key={i} />)}
         </div>
       ) : filteredOrders.length === 0 ? (
-        <div className="bg-card border border-border rounded-xl p-12 text-center">
-          <Package className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
-          <p className="text-muted-foreground">
-            {searchQuery ? t('dash.no_orders_search') : t('dash.no_orders')}
-          </p>
+        <div className="flex flex-col items-center justify-center p-16 bg-card border border-dashed border-border rounded-3xl text-center">
+          <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
+             <Package className="w-8 h-8 text-muted-foreground" />
+          </div>
+          <h3 className="text-xl font-bold text-foreground mb-2">{t('dash.no_orders')}</h3>
+          <p className="text-muted-foreground">{t('dash.no_orders_search')}</p>
         </div>
       ) : (
-        <div className="grid gap-4">
-          {filteredOrders.map(order => {
-            const StatusIcon = getStatusIcon(order.status)
-            const isUpdating = updatingOrder === order.id
+        <div className="bg-card border border-border rounded-3xl shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                    <thead>
+                        <tr className="border-b border-border/50 bg-muted/20">
+                            <th className="px-6 py-4 font-bold text-muted-foreground uppercase tracking-wider text-xs"># ID</th>
+                            <th className="px-6 py-4 font-bold text-muted-foreground uppercase tracking-wider text-xs">{t('dash.customer_label')}</th>
+                            <th className="px-6 py-4 font-bold text-muted-foreground uppercase tracking-wider text-xs">{t('dash.date_label')}</th>
+                            <th className="px-6 py-4 font-bold text-muted-foreground uppercase tracking-wider text-xs">{t('checkout.total')}</th>
+                            <th className="px-6 py-4 font-bold text-muted-foreground uppercase tracking-wider text-xs">Status</th>
+                            <th className="px-6 py-4 font-bold text-muted-foreground uppercase tracking-wider text-xs text-right">{t('dash.actions')}</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border/50">
+                        {filteredOrders.map((order) => (
+                            <tr key={order.id} className="hover:bg-muted/10 transition-colors group">
+                                <td className="px-6 py-4">
+                                    <span className="font-mono text-xs font-bold bg-muted px-2 py-1 rounded text-foreground/80">
+                                        {order.id.slice(0, 8)}
+                                    </span>
+                                </td>
+                                <td className="px-6 py-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center text-white font-bold text-xs">
+                                            {order.customer_name?.charAt(0) || 'U'}
+                                        </div>
+                                        <div>
+                                            <p className="font-bold text-foreground">{order.customer_name}</p>
+                                            <p className="text-xs text-muted-foreground">{order.city || t('dash.na')}</p>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td className="px-6 py-4">
+                                    <div className="flex flex-col">
+                                        <span className="font-medium text-foreground">
+                                            {new Date(order.created_at).toLocaleDateString('es-CO', { day: 'numeric', month: 'short' })}
+                                        </span>
+                                        <span className="text-xs text-muted-foreground">
+                                            {new Date(order.created_at).getFullYear()}
+                                        </span>
+                                    </div>
+                                </td>
+                                <td className="px-6 py-4">
+                                    <span className="font-bold text-foreground">
+                                        {formatCurrency(order.total)}
+                                    </span>
+                                </td>
+                                <td className="px-6 py-4">
+                                    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold capitalize ${getStatusColor(order.status)}`}>
+                                        <span className={`w-1.5 h-1.5 rounded-full ${getStatusDot(order.status)} animate-pulse`}></span>
+                                        {t(`dash.${order.status}`)}
+                                    </span>
+                                </td>
+                                <td className="px-6 py-4 text-right">
+                                        <div className="flex items-center justify-end gap-2">
+                                            {/* Status Actions */}
+                                            {order.status === 'pending' && (
+                                                <ActionTooltip text={t('dash.mark_paid')}>
+                                                    <button 
+                                                        onClick={() => initiateUpdate(order.id, 'paid')}
+                                                        className="p-2 hover:bg-blue-100 text-blue-600 rounded-lg transition-colors bg-blue-50"
+                                                    >
+                                                        <CreditCard className="w-4 h-4" />
+                                                    </button>
+                                                </ActionTooltip>
+                                            )}
+                                            {order.status === 'paid' && (
+                                                <ActionTooltip text={t('dash.ship_order')}>
+                                                    <button 
+                                                        onClick={() => initiateUpdate(order.id, 'shipped')}
+                                                        className="p-2 hover:bg-purple-100 text-purple-600 rounded-lg transition-colors bg-purple-50"
+                                                    >
+                                                        <Truck className="w-4 h-4" />
+                                                    </button>
+                                                </ActionTooltip>
+                                            )}
+                                            {order.status === 'shipped' && (
+                                                <ActionTooltip text={t('dash.mark_delivered')}>
+                                                    <button 
+                                                        onClick={() => initiateUpdate(order.id, 'delivered')}
+                                                        className="p-2 hover:bg-green-100 text-green-600 rounded-lg transition-colors bg-green-50"
+                                                    >
+                                                        <CheckCircle className="w-4 h-4" />
+                                                    </button>
+                                                </ActionTooltip>
+                                            )}
+                                        
+                                        <div className="w-px h-6 bg-border mx-2"></div>
 
-            return (
-              <div key={order.id} className="bg-card border border-border rounded-xl p-6 hover:shadow-md transition-all">
-                <div className="flex flex-col lg:flex-row gap-6 items-start lg:items-center">
-                  {/* Order Info */}
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-3">
-                      <h3 className="font-bold text-lg font-mono text-primary">#{order.id.slice(0, 8)}</h3>
-                      <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(order.status)}`}>
-                        <StatusIcon className="w-3.5 h-3.5" />
-                        <span className="capitalize">{t(`dash.${order.status}`)}</span>
-                      </div>
-                    </div>
-                    
-                    <div className="grid md:grid-cols-2 gap-x-6 gap-y-2 text-sm">
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-foreground">{t('dash.customer_label')}</span>
-                        <span className="text-muted-foreground">{order.customer_name || t('dash.na')}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-foreground">{t('dash.date_label')}</span>
-                        <span className="text-muted-foreground">
-                          {new Date(order.created_at).toLocaleDateString('es-CO', { 
-                            year: 'numeric', 
-                            month: 'short', 
-                            day: 'numeric' 
-                          })}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-foreground">{t('dash.phone_label')}</span>
-                        <span className="text-muted-foreground">{order.phone || t('dash.na')}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-foreground">{t('dash.city_label')}</span>
-                        <span className="text-muted-foreground">{order.city || t('dash.na')}</span>
-                      </div>
-                      <div className="col-span-1 md:col-span-2 flex items-center gap-2">
-                        <span className="font-semibold text-foreground">{t('dash.address_label')}</span>
-                        <span className="text-muted-foreground">{order.shipping_address || t('dash.na')}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex flex-col items-end gap-3 min-w-[200px] border-t lg:border-t-0 border-border pt-4 lg:pt-0 w-full lg:w-auto">
-                    <div className="text-right">
-                      <span className="text-2xl font-bold text-foreground">{formatCurrency(order.total)}</span>
-                    </div>
-                    
-                    {isUpdating ? (
-                      <div className="w-full bg-muted px-6 py-2 rounded-lg flex items-center justify-center">
-                        <Loader2 className="w-4 h-4 animate-spin text-primary" />
-                      </div>
-                    ) : (
-                      <>
-                        {order.status === 'pending' && (
-                          <button 
-                            onClick={() => initiateUpdate(order.id, 'paid')}
-                            className="w-full bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
-                          >
-                            <Package className="w-4 h-4" /> {t('dash.mark_paid')}
-                          </button>
-                        )}
-                        {order.status === 'paid' && (
-                          <button 
-                            onClick={() => initiateUpdate(order.id, 'shipped')}
-                            className="w-full bg-purple-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-purple-700 transition-colors flex items-center justify-center gap-2"
-                          >
-                            <Truck className="w-4 h-4" /> {t('dash.ship_order')}
-                          </button>
-                        )}
-                        {order.status === 'shipped' && (
-                          <button 
-                            onClick={() => initiateUpdate(order.id, 'delivered')}
-                            className="w-full bg-green-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
-                          >
-                            <CheckCircle className="w-4 h-4" /> {t('dash.mark_delivered')}
-                          </button>
-                        )}
-                      </>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )
-          })}
+                                        <button 
+                                            onClick={() => setSelectedOrder(order)}
+                                            className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-xs font-bold hover:bg-primary/90 transition-all shadow-md shadow-primary/20"
+                                        >
+                                            <Eye className="w-3.5 h-3.5" />
+                                            {t('products.details')}
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
         </div>
       )}
+
+      {/* Invoice Details Modal */}
+      <AnimatePresence>
+        {selectedOrder && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md p-4">
+                <motion.div 
+                    initial={{ opacity: 0, y: 50 }} 
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 50 }}
+                    transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                    className="bg-card w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-3xl shadow-2xl border border-border flex flex-col"
+                >
+                    {/* Invoice/Order Header */}
+                    <div className="p-8 border-b border-border bg-gradient-to-br from-card to-muted/20 relative">
+                        <button onClick={() => setSelectedOrder(null)} className="absolute top-6 right-6 p-2 hover:bg-black/5 rounded-full transition-colors">
+                            <X className="w-6 h-6 text-muted-foreground" />
+                        </button>
+
+                        <div className="flex flex-col md:flex-row justify-between items-start gap-4 mb-8">
+                            <div>
+                                <h2 className="text-3xl font-black text-foreground mb-1">{t('dash.invoice')}</h2>
+                                <p className="text-muted-foreground font-mono text-sm">#{selectedOrder.id}</p>
+                            </div>
+                            <div className="text-right flex flex-col items-end gap-3">
+                                <span className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-bold capitalize border ${getStatusColor(selectedOrder.status)}`}>
+                                     {t(`dash.${selectedOrder.status}`)}
+                                </span>
+                                <button 
+                                    onClick={() => downloadInvoicePDF(selectedOrder)}
+                                    className="px-4 py-2 bg-foreground text-background rounded-xl text-xs font-bold flex items-center gap-2 hover:opacity-90 transition-opacity"
+                                >
+                                    <Package className="w-3.5 h-3.5" />
+                                    {t('dash.download_pdf')} 
+                                </button>
+                                <p className="text-sm text-muted-foreground">
+                                    {new Date(selectedOrder.created_at).toLocaleDateString('es-CO', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="grid md:grid-cols-2 gap-8">
+                             {/* Customer Details */}
+                             <div className="space-y-4">
+                                <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                                    <User className="w-3.5 h-3.5" /> {t('dash.customer')}
+                                </h3>
+                                <div>
+                                    <p className="font-bold text-lg text-foreground">{selectedOrder.customer_name}</p>
+                                    <p className="text-sm text-muted-foreground flex items-center gap-2 mt-1">
+                                         <Mail className="w-3.5 h-3.5" /> {selectedOrder.customer_email || 'No email'}
+                                    </p>
+                                    <p className="text-sm text-muted-foreground flex items-center gap-2 mt-1">
+                                         <Phone className="w-3.5 h-3.5" /> {selectedOrder.phone}
+                                    </p>
+                                </div>
+                             </div>
+
+                             {/* Shipping Details */}
+                             <div className="space-y-4">
+                                <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                                    <MapPin className="w-3.5 h-3.5" /> {t('checkout.shipping')}
+                                </h3>
+                                <div className="bg-background/50 p-4 rounded-xl border border-border/50">
+                                    <p className="font-bold text-foreground mb-1">{selectedOrder.city}</p>
+                                    <p className="text-sm leading-relaxed">{selectedOrder.shipping_address}</p>
+                                    <p className="text-[10px] uppercase tracking-wide text-primary font-bold mt-2">
+                                        {t('dash.included_badge')}
+                                    </p>
+                                </div>
+                             </div>
+                        </div>
+                    </div>
+
+                    {/* Order Items Table */}
+                    <div className="p-8 bg-card">
+                        <h3 className="text-lg font-bold mb-6 flex items-center gap-2">
+                            <Package className="w-5 h-5 text-primary" /> {t('cart.items')} <span className="text-muted-foreground font-normal text-sm">({selectedOrder.order_items?.length || 0})</span>
+                        </h3>
+                        
+                        <div className="border rounded-2xl overflow-hidden border-border/50">
+                             <table className="w-full text-left text-sm">
+                                <thead className="bg-muted/30">
+                                    <tr className="border-b border-border/50">
+                                        <th className="px-6 py-3 font-semibold text-muted-foreground">{t('dash.table_product')}</th>
+                                        <th className="px-6 py-3 font-semibold text-muted-foreground text-center">{t('dash.table_qty')}</th>
+                                        <th className="px-6 py-3 font-semibold text-muted-foreground text-right">{t('dash.table_price')}</th>
+                                        <th className="px-6 py-3 font-semibold text-muted-foreground text-right">{t('dash.table_total')}</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-border/50">
+                                    {selectedOrder.order_items?.map((item, idx) => (
+                                        <tr key={idx} className="hover:bg-muted/10">
+                                            <td className="px-6 py-4">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="w-12 h-12 bg-muted rounded-lg relative overflow-hidden flex-shrink-0 border border-border/50">
+                                                        {(() => {
+                                                            const img = item.products?.image_url || item.products?.images?.[0]
+                                                            return img ? (
+                                                                <Image 
+                                                                    src={img} 
+                                                                    alt={item.product_name} 
+                                                                    fill 
+                                                                    className="object-cover" 
+                                                                />
+                                                            ) : (
+                                                                <div className="flex items-center justify-center w-full h-full text-xs text-muted-foreground">{t('dash.image_abbr')}</div>
+                                                            )
+                                                        })()}
+                                                    </div>
+                                                    <div>
+                                                        <p className="font-bold text-foreground">{item.product_name}</p>
+                                                        {item.size && (
+                                                            <span className="text-xs bg-muted px-2 py-0.5 rounded text-muted-foreground font-mono">
+                                                                {t('dash.size')}: {item.size}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4 text-center font-medium">x{item.quantity}</td>
+                                            <td className="px-6 py-4 text-right text-muted-foreground">{formatCurrency(item.price)}</td>
+                                            <td className="px-6 py-4 text-right font-bold text-foreground">
+                                                {formatCurrency(item.price * item.quantity)}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                             </table>
+                        </div>
+
+                        {/* Totals Section */}
+                        <div className="flex justify-end mt-8">
+                             <div className="w-full sm:w-1/2 md:w-1/3 bg-muted/20 p-6 rounded-2xl border border-border/50">
+                                 <div className="flex justify-between items-center mb-3">
+                                     <span className="text-sm text-muted-foreground">{t('checkout.subtotal')}</span>
+                                     <span className="font-medium">{formatCurrency(selectedOrder.total)}</span>
+                                 </div>
+                                 <div className="flex justify-between items-center mb-4">
+                                      <span className="text-sm text-muted-foreground">{t('checkout.shipping_cost')}</span>
+                                      <span className="font-medium text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">{t('dash.included')}</span>
+                                 </div>
+                                 <div className="border-t border-border pt-4 flex justify-between items-center">
+                                      <span className="font-black text-xl">{t('checkout.total')}</span>
+                                      <span className="font-black text-xl text-primary">{formatCurrency(selectedOrder.total)}</span>
+                                 </div>
+                             </div>
+                        </div>
+                    </div>
+                </motion.div>
+            </div>
+        )}
+      </AnimatePresence>
 
       {/* Confirmation Modal */}
       <AnimatePresence>
         {confirmData && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
                 <motion.div 
-                    initial={{ opacity: 0, scale: 0.9 }} 
+                    initial={{ opacity: 0, scale: 0.95 }} 
                     animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.9 }}
-                    className="bg-card w-full max-w-md rounded-2xl shadow-xl overflow-hidden border border-border"
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    className="bg-card w-full max-w-sm rounded-3xl shadow-2xl p-6 border border-border text-center"
                 >
-                    <div className="p-6">
-                        <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-4 mx-auto">
-                            <AlertTriangle className="w-6 h-6 text-primary" />
-                        </div>
-                        <h3 className="text-xl font-bold text-center mb-2">{t('dash.confirm_status_title')}</h3>
-                        <p className="text-muted-foreground text-center mb-6">
-                            {t('dash.confirm_status_desc').replace('{status}', t(`dash.${confirmData.status}`))}
-                        </p>
-                        
-                        <div className="flex gap-3">
-                            <button 
-                                onClick={() => setConfirmData(null)}
-                                className="flex-1 py-2.5 rounded-xl border border-border font-semibold hover:bg-muted transition-colors"
-                            >
-                                {t('dash.cancel')}
-                            </button>
-                            <button 
-                                onClick={performUpdate}
-                                className="flex-1 py-2.5 rounded-xl bg-primary text-primary-foreground font-bold hover:opacity-90 transition-opacity"
-                            >
-                                {t('dash.confirm_btn')}
-                            </button>
-                        </div>
+                    <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <AlertTriangle className="w-8 h-8 text-primary" />
+                    </div>
+                    <h3 className="text-xl font-bold mb-2">{t('dash.confirm_status_title')}</h3>
+                    <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
+                        {t('dash.confirm_status_desc').replace('{status}', t(`dash.${confirmData.status}`))}
+                    </p>
+                    <div className="flex gap-3">
+                        <button 
+                            onClick={() => setConfirmData(null)}
+                            className="flex-1 py-3 rounded-xl border border-border font-bold text-sm hover:bg-muted transition-colors"
+                        >
+                            {t('dash.cancel')}
+                        </button>
+                        <button 
+                            onClick={performUpdate}
+                            className="flex-1 py-3 rounded-xl bg-primary text-white font-bold text-sm hover:opacity-90 transition-opacity shadow-lg shadow-primary/25"
+                        >
+                            {t('dash.confirm_btn')}
+                        </button>
                     </div>
                 </motion.div>
             </div>

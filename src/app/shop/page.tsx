@@ -92,7 +92,7 @@ function ShopContent() {
                <div className="flex flex-col gap-6 mb-8">
                   <div className="flex justify-between items-center">
                       <h1 className="text-3xl font-bold">{t('nav.shop')}</h1>
-                      <span className="text-sm text-muted-foreground hidden md:block">{products.length} items</span>
+                      <span className="text-sm text-muted-foreground hidden md:block">{products.length} {t('shop.items_count')}</span>
                   </div>
                   
                   <div className="sticky top-20 z-30 bg-background/95 backdrop-blur-sm py-3 -mx-6 px-6 md:static md:bg-transparent md:p-0 md:m-0 border-b md:border-none border-border/40 transition-all">
@@ -105,17 +105,18 @@ function ShopContent() {
                              <Filter className="w-4 h-4" /> {t('filters.title') || 'Filters'}
                           </button>
 
-                          {/* Active Filters Badges */}
+
+                            {/* Active Filters Badges */}
                           {(categoryFilter || genderFilter || sizeFilter || minPrice || maxPrice) && (
                               <div className="flex flex-wrap gap-2">
-                                 {categoryFilter && <span className="text-xs bg-primary/20 text-primary px-2 py-1 rounded-full uppercase">{categoryFilter}</span>}
-                                 {genderFilter && <span className="text-xs bg-accent/20 text-accent px-2 py-1 rounded-full uppercase">{genderFilter}</span>}
-                                 {sizeFilter && <span className="text-xs bg-muted text-foreground px-2 py-1 rounded-full font-bold">Size: {sizeFilter}</span>}
+                                 {categoryFilter && <span className="text-xs bg-primary/20 text-primary px-2 py-1 rounded-full uppercase">{t(`cat.${categoryFilter.toLowerCase()}`)}</span>}
+                                 {genderFilter && <span className="text-xs bg-accent/20 text-accent px-2 py-1 rounded-full uppercase">{t(`filters.${genderFilter.toLowerCase()}`)}</span>}
+                                 {sizeFilter && <span className="text-xs bg-muted text-foreground px-2 py-1 rounded-full font-bold">{t('filters.size_title')}: {sizeFilter}</span>}
                                  {(minPrice || maxPrice) && <span className="text-xs bg-green-500/10 text-green-600 px-2 py-1 rounded-full">${minPrice || 0} - ${maxPrice || '∞'}</span>}
                               </div>
                           )}
                           
-                          <span className="text-sm text-muted-foreground md:hidden">{products.length} items</span>
+                          <span className="text-sm text-muted-foreground md:hidden">{products.length} {t('shop.items')}</span>
                       </div>
                   </div>
                </div>
@@ -169,8 +170,10 @@ function ShopContent() {
 }
 
 export default function ShopPage() {
+  const { t } = useLanguage()
+  
   return (
-    <Suspense fallback={<div className="min-h-screen bg-background pt-32 text-center">Loading Shop...</div>}>
+    <Suspense fallback={<div className="min-h-screen bg-background pt-32 text-center">{t('shop.loading')}</div>}>
       <ShopContent />
     </Suspense>
   )

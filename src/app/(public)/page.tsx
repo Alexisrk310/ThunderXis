@@ -76,9 +76,9 @@ export default function ShopPage() {
                    </div>
                ) : products.length === 0 ? (
                    <div className="text-center py-20 bg-muted/5 rounded-3xl border border-white/5 backdrop-blur-sm">
-                        <p className="text-lg text-muted-foreground mb-4">No new drops at the moment.</p>
+                        <p className="text-lg text-muted-foreground mb-4">{t('home.no_drops')}</p>
                         <Link href="/shop" className="text-primary hover:underline">
-                           Browse all collection
+                           {t('home.browse_collection')}
                         </Link>
                    </div>
                ) : (

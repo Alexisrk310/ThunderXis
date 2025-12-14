@@ -154,6 +154,14 @@ export default function Navbar() {
                        </div>
                        <div className="p-2">
                            <Link 
+                                href="/profile" 
+                                onClick={() => setIsProfileMenuOpen(false)}
+                                className="flex items-center gap-2 w-full px-3 py-2 text-sm rounded-lg hover:bg-primary/10 hover:text-primary text-foreground transition-colors"
+                           >
+                               <User className="w-4 h-4" />
+                               {t('profile.title')}
+                           </Link>
+                           <Link 
                                 href="/my-orders" 
                                 onClick={() => setIsProfileMenuOpen(false)}
                                 className="flex items-center gap-2 w-full px-3 py-2 text-sm rounded-lg hover:bg-primary/10 hover:text-primary text-foreground transition-colors"
@@ -221,10 +229,11 @@ export default function Navbar() {
                  initial={{ opacity: 0, x: '100%' }}
                  animate={{ opacity: 1, x: 0 }}
                  exit={{ opacity: 0, x: '100%' }}
-                 className="fixed inset-0 bg-[#faf5ff] backdrop-blur-xl z-[60] flex flex-col p-6 text-primary"
+                 transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                 className="fixed inset-0 bg-background/80 backdrop-blur-xl z-[60] flex flex-col p-6 text-foreground shadow-2xl"
               >
                  <div className="flex justify-between items-center mb-8">
-                     <span className="font-bold text-xl">Menu</span>
+                     <span className="font-bold text-xl">{t('nav.menu_title')}</span>
                      <button onClick={() => setIsMobileMenuOpen(false)}>
                          <X className="w-6 h-6" />
                      </button>
@@ -267,9 +276,9 @@ export default function Navbar() {
                     
                     {user ? (
                         <>
-                            <Link href="/my-orders" onClick={() => setIsMobileMenuOpen(false)}>{t('nav.orders') || 'My Orders'}</Link>
+                            <Link href="/my-orders" onClick={() => setIsMobileMenuOpen(false)}>{t('nav.orders')}</Link>
                             <button onClick={() => { setIsLogoutModalOpen(true); setIsMobileMenuOpen(false) }} className="text-left text-red-500">
-                                {t('auth.logout') || 'Logout'}
+                                {t('auth.logout')}
                             </button>
                         </>
                     ) : (

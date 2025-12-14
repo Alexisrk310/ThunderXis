@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import { useLanguage } from '@/components/LanguageProvider'
-import { Star, User, Trash2, MessageSquare, Save, X } from 'lucide-react'
+import { Star, User, Trash2, MessageSquare, Save, X, Reply, Pencil } from 'lucide-react'
 import { useToast } from '@/components/ui/Toast'
 import Image from 'next/image'
 
@@ -19,6 +19,8 @@ export default function DashboardReviewsPage() {
   const [isAdding, setIsAdding] = useState(false)
   const [newReview, setNewReview] = useState({ product_id: '', rating: 5, comment: '', username: 'ThunderXis Admin' })
   const [products, setProducts] = useState<any[]>([])
+  // Delete Confirmation State
+  const [deleteData, setDeleteData] = useState<{ isOpen: boolean, type: 'review' | 'reply', id: string } | null>(null)
 
   const fetchReviews = async () => {
     try {
@@ -51,7 +53,7 @@ export default function DashboardReviewsPage() {
 
   const handleAddReview = async (e: React.FormEvent) => {
       e.preventDefault()
-      if (!newReview.product_id) return addToast('Select a product', 'error')
+      if (!newReview.product_id) return addToast(t('dash.reviews.select_error'), 'error')
 
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
@@ -67,23 +69,16 @@ export default function DashboardReviewsPage() {
 
       if (error) {
           console.error(error)
-          addToast('Error adding review', 'error')
+          addToast(t('dash.reviews.error_add'), 'error')
       } else {
-          addToast('Review added successfully', 'success')
+          addToast(t('dash.reviews.success_add'), 'success')
           setIsAdding(false)
           setNewReview({ product_id: '', rating: 5, comment: '', username: 'ThunderXis Admin' })
           fetchReviews()
       }
   }
 
-  if (loading) return <div className="p-8">Loading...</div>
-
-  const handleDelete = async (id: string) => {
-    if (!confirm(t('dash.delete_review') + '?')) return
-    await supabase.from('reviews').delete().eq('id', id)
-    fetchReviews()
-    addToast('Review deleted', 'success')
-  }
+  if (loading) return <div className="p-8 flex justify-center"><div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div></div>
 
   const handleReply = async (id: string) => {
       await supabase
@@ -94,111 +89,201 @@ export default function DashboardReviewsPage() {
       setReplyingTo(null)
       setReplyText('')
       fetchReviews()
-      addToast('Reply posted', 'success')
+      addToast(t('dash.reviews.success_reply'), 'success')
   }
 
+  const handleDelete = (id: string) => {
+    setDeleteData({ isOpen: true, type: 'review', id })
+  }
 
+  const handleDeleteReply = (id: string) => {
+    setDeleteData({ isOpen: true, type: 'reply', id })
+  }
+
+  const confirmDelete = async () => {
+      if (!deleteData) return
+
+      if (deleteData.type === 'review') {
+        await supabase.from('reviews').delete().eq('id', deleteData.id)
+        addToast(t('dash.delete_review'), 'success')
+      } else {
+        await supabase
+            .from('reviews')
+            .update({ reply: null, replied_at: null })
+            .eq('id', deleteData.id)
+        addToast(t('dash.reviews.reply_deleted') || 'Reply deleted', 'success')
+      }
+      
+      fetchReviews()
+      setDeleteData(null)
+  }
 
   return (
-    <div className="space-y-6">
-        <div className="flex justify-between items-center">
-            <h1 className="text-3xl font-bold">{t('dash.reviews_title')}</h1>
+    <div className="space-y-6 max-w-5xl mx-auto">
+        {/* ... Header & List ... */}
+        <div className="flex justify-between items-center mb-8">
+            <div>
+                <h1 className="text-3xl font-extrabold tracking-tight">{t('dash.reviews_title')}</h1>
+                <p className="text-muted-foreground mt-1">{t('dash.reviews_subtitle')}</p>
+            </div>
             <button 
                 onClick={() => setIsAdding(true)}
-                className="bg-primary text-primary-foreground px-4 py-2 rounded-xl font-bold hover:opacity-90 transition-opacity flex items-center gap-2"
+                className="bg-primary text-primary-foreground px-5 py-2.5 rounded-xl font-bold hover:opacity-90 transition-all shadow-lg shadow-primary/20 flex items-center gap-2 transform active:scale-95"
             >
-                + {t('dash.add_review') || 'Add Admin Review'}
+                + {t('dash.reviews.add_admin')}
             </button>
         </div>
 
-        <div className="grid gap-4">
+        <div className="space-y-6">
             {reviews.map((review) => (
-                <div key={review.id} className="bg-card border border-border rounded-xl p-6 shadow-sm">
+                <div key={review.id} className="bg-card border border-border rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden">
                     <div className="flex flex-col md:flex-row gap-6">
                         {/* Product Info */}
-                        <div className="flex items-center gap-3 w-full md:w-48 flex-shrink-0">
-                            <div className="relative w-12 h-12 rounded-lg overflow-hidden border border-border">
-                                {review.products?.image_url && (
+                        <div className="flex items-center gap-3 w-full md:w-56 flex-shrink-0 p-3 bg-muted/30 rounded-xl max-h-min self-start border border-border/50">
+                            <div className="relative w-14 h-14 rounded-lg overflow-hidden border border-border bg-white shadow-sm flex-shrink-0">
+                                {review.products?.image_url ? (
                                     <Image src={review.products.image_url} alt="" fill className="object-cover" />
+                                ) : (
+                                    <div className="w-full h-full bg-muted flex items-center justify-center text-xs">{t('dash.reviews.no_img')}</div>
                                 )}
                             </div>
-                            <p className="text-xs font-bold line-clamp-2">{review.products?.name}</p>
+                            <div className="overflow-hidden">
+                                <p className="text-xs font-bold text-foreground line-clamp-2 leading-tight">{review.products?.name}</p>
+                                <div className="flex items-center gap-1 mt-1">
+                                    <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" />
+                                    <span className="text-xs font-bold">{review.rating}.0</span>
+                                </div>
+                            </div>
                         </div>
 
-                        {/* Review Content */}
-                        <div className="flex-1 space-y-3">
-                            <div className="flex justify-between items-start">
-                                <div className="flex items-center gap-2">
-                                    <div className="bg-primary/10 p-1.5 rounded-full">
-                                        <User className="w-4 h-4 text-primary" />
+                        {/* Conversation Info */}
+                        <div className="flex-1 space-y-6">
+                            
+                            {/* User Review Bubble */}
+                            <div className="flex gap-4">
+                                <div className="flex-shrink-0">
+                                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 border border-gray-300 flex items-center justify-center shadow-sm">
+                                        <User className="w-5 h-5 text-gray-500" />
                                     </div>
-                                    <div>
-                                        <p className="text-sm font-bold">{review.username || 'Anonymous'}</p>
-                                        <div className="flex">
-                                            {[...Array(5)].map((_, i) => (
-                                                <Star key={i} className={`w-3 h-3 ${i < review.rating ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground/30'}`} />
-                                            ))}
+                                </div>
+                                <div className="flex-1">
+                                    <div className="flex justify-between items-center mb-1">
+                                        <h3 className="font-bold text-sm text-foreground">{review.username || t('dash.reviews.anon')}</h3>
+                                        <div className="flex items-center gap-3">
+                                            <span className="text-xs text-muted-foreground">{new Date(review.created_at).toLocaleDateString()}</span>
+                                            <button 
+                                                onClick={() => handleDelete(review.id)}
+                                                className="text-muted-foreground hover:text-red-500 transition-colors p-1"
+                                                title={t('dash.reviews.delete_thread')}
+                                            >
+                                                <Trash2 className="w-3.5 h-3.5" />
+                                            </button>
                                         </div>
                                     </div>
-                                </div>
-                                <span className="text-xs text-muted-foreground">
-                                    {new Date(review.created_at).toLocaleDateString()}
-                                </span>
-                            </div>
-
-                            <p className="text-sm text-muted-foreground bg-muted/30 p-3 rounded-lg border border-border/50 italic">
-                                "{review.comment}"
-                            </p>
-
-                            {/* Existing Reply */}
-                            {review.reply && !replyingTo && (
-                                <div className="ml-8 mt-2 p-3 bg-primary/5 border-l-2 border-primary rounded-r-lg">
-                                    <p className="text-xs font-bold text-primary mb-1">{t('dash.replied')}:</p>
-                                    <p className="text-sm">{review.reply}</p>
-                                </div>
-                            )}
-
-                            {/* Reply Input */}
-                            {replyingTo === review.id ? (
-                                <div className="mt-4 space-y-2">
-                                    <textarea 
-                                        value={replyText}
-                                        onChange={(e) => setReplyText(e.target.value)}
-                                        className="w-full bg-background border border-border p-3 rounded-lg text-sm focus:ring-2 ring-primary/20 outline-none"
-                                        placeholder={t('dash.reply_placeholder')}
-                                        rows={3}
-                                    />
-                                    <div className="flex gap-2 justify-end">
-                                        <button 
-                                            onClick={() => setReplyingTo(null)}
-                                            className="px-3 py-1.5 text-xs font-bold border border-border rounded-lg hover:bg-muted"
-                                        >
-                                            Cancel
-                                        </button>
-                                        <button 
-                                            onClick={() => handleReply(review.id)}
-                                            className="px-3 py-1.5 text-xs font-bold bg-primary text-primary-foreground rounded-lg hover:opacity-90 flex items-center gap-1.5"
-                                        >
-                                            <Save className="w-3 h-3" /> {t('dash.reply_save')}
-                                        </button>
+                                    <div className="bg-muted/40 p-4 rounded-2xl rounded-tl-none border border-border/50 text-sm leading-relaxed text-foreground">
+                                        {review.comment}
                                     </div>
                                 </div>
-                            ) : (
-                                <div className="flex gap-2 pt-2">
-                                     <button 
-                                        onClick={() => { setReplyingTo(review.id); setReplyText(review.reply || ''); }}
-                                        className="text-xs font-bold flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
-                                    >
-                                        <MessageSquare className="w-3.5 h-3.5" /> {t('dash.reply')}
-                                    </button>
+                            </div>
+
+                            {/* Owner Reply Bubble (ThunderXis) */}
+                            {(review.reply || replyingTo === review.id) && (
+                                <div className="flex gap-4 flex-row-reverse">
+                                    <div className="flex-shrink-0">
+                                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-purple-600 border border-primary/20 flex items-center justify-center shadow-md text-white font-bold text-xs">
+                                            TX
+                                        </div>
+                                    </div>
+                                    <div className="flex-1 text-right">
+                                        <div className="flex justify-end items-center mb-1 gap-2">
+                                            {review.replied_at && <span className="text-xs text-muted-foreground">{new Date(review.replied_at).toLocaleDateString()}</span>}
+                                            <h3 className="font-bold text-sm text-primary flex items-center gap-1">
+                                                ThunderXis <span className="text-[10px] bg-primary/10 px-1.5 rounded text-primary uppercase tracking-wider">{t('dash.owner')}</span>
+                                            </h3>
+                                            
+                                            {/* Reply Actions (Icons) */}
+                                            {review.reply && !replyingTo && (
+                                                <div className="flex items-center gap-1 ml-2 border-l border-border pl-2">
+                                                    <button 
+                                                        onClick={() => { setReplyingTo(review.id); setReplyText(review.reply); }}
+                                                        className="p-1 text-muted-foreground hover:text-primary transition-colors"
+                                                        title={t('dash.reviews.edit')}
+                                                    >
+                                                        <Pencil className="w-3 h-3" />
+                                                    </button>
+                                                    <button 
+                                                        onClick={() => handleDeleteReply(review.id)}
+                                                        className="p-1 text-muted-foreground hover:text-red-500 transition-colors"
+                                                        title={t('dash.reviews.delete_reply')}
+                                                    >
+                                                        <Trash2 className="w-3 h-3" />
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
+                                        
+                                        <div className="grid grid-cols-2 gap-4 text-sm text-muted-foreground mb-4 bg-muted/30 p-3 rounded-lg">
+                      <div>
+                        <span className="text-muted-foreground">{t('dash.product')}</span>
+                        <p className="font-medium text-foreground truncate">{review.productName}</p>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">{t('dash.rating')}</span>
+                        <div className="flex text-yellow-500">
+                          {[...Array(5)].map((_, i) => (
+                            <Star
+                              key={i}
+                              className={`w-3 h-3 ${i < review.rating ? 'fill-current' : 'text-gray-300'}`}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    </div>{replyingTo === review.id ? (
+                                            <div className="bg-white border-2 border-primary/20 p-4 rounded-2xl rounded-tr-none shadow-sm text-left">
+                                                <textarea 
+                                                    value={replyText}
+                                                    onChange={(e) => setReplyText(e.target.value)}
+                                                    className="w-full bg-transparent border-none p-0 text-sm focus:ring-0 outline-none resize-none placeholder:text-muted-foreground/50"
+                                                    placeholder={t('dash.reviews.reply_to').replace('{0}', review.username)}
+                                                    rows={3}
+                                                    autoFocus
+                                                />
+                                                <div className="flex gap-2 justify-end mt-2 pt-2 border-t border-border/50">
+                                                    <button 
+                                                        onClick={() => setReplyingTo(null)}
+                                                        className="px-3 py-1.5 text-xs font-bold text-muted-foreground hover:text-foreground transition-colors"
+                                                    >
+                                                        {t('dash.reviews.cancel')}
+                                                    </button>
+                                                    <button 
+                                                        onClick={() => handleReply(review.id)}
+                                                        className="px-4 py-1.5 text-xs font-bold bg-primary text-primary-foreground rounded-lg hover:opacity-90 flex items-center gap-1.5 shadow-sm"
+                                                    >
+                                                        <Reply className="w-3 h-3" /> {t('dash.reviews.send')}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div className="bg-primary/5 p-4 rounded-2xl rounded-tr-none border border-primary/10 text-sm leading-relaxed text-foreground text-left inline-block max-w-[90%]">
+                                                {review.reply}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Actions if no reply yet or not replying */}
+                            {!review.reply && !replyingTo && (
+                                <div className="flex justify-end pt-2">
                                     <button 
-                                        onClick={() => handleDelete(review.id)}
-                                        className="text-xs font-bold flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
+                                        onClick={() => { setReplyingTo(review.id); setReplyText(''); }}
+                                        className="text-xs font-bold flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary/10 text-primary hover:bg-primary/20 transition-all"
                                     >
-                                        <Trash2 className="w-3.5 h-3.5" /> {t('dash.delete_review')}
+                                        <Reply className="w-3.5 h-3.5" /> {t('dash.reply')}
                                     </button>
                                 </div>
                             )}
+
                         </div>
                     </div>
                 </div>
@@ -207,28 +292,28 @@ export default function DashboardReviewsPage() {
 
         {/* Add Review Modal */}
         {isAdding && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-                <div className="bg-card w-full max-w-md rounded-2xl shadow-xl border border-border overflow-hidden">
-                    <div className="flex justify-between items-center p-4 border-b border-border">
-                        <h3 className="font-bold">{t('dash.add_review') || 'Add Admin Review'}</h3>
-                        <button onClick={() => setIsAdding(false)}><X className="w-5 h-5" /></button>
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+                <div className="bg-card w-full max-w-md rounded-2xl shadow-xl border border-border overflow-hidden animate-in zoom-in-95 duration-200">
+                    <div className="flex justify-between items-center p-4 border-b border-border bg-muted/20">
+                        <h3 className="font-bold">{t('dash.reviews.add_admin')}</h3>
+                        <button onClick={() => setIsAdding(false)} className="p-1 hover:bg-muted rounded-lg"><X className="w-5 h-5" /></button>
                     </div>
-                    <form onSubmit={handleAddReview} className="p-4 space-y-4">
+                    <form onSubmit={handleAddReview} className="p-5 space-y-4">
                         <div>
-                            <label className="text-xs font-bold mb-1 block">Product</label>
+                            <label className="text-xs font-bold mb-1.5 block uppercase text-muted-foreground">Product</label>
                             <select 
-                                className="w-full bg-background border border-border rounded-lg p-2 text-sm"
+                                className="w-full bg-background border border-border rounded-xl p-3 text-sm focus:ring-2 ring-primary/20 outline-none"
                                 value={newReview.product_id}
                                 onChange={e => setNewReview({...newReview, product_id: e.target.value})}
                                 required
                             >
-                                <option value="">Select Product...</option>
+                                <option value="">{t('dash.reviews.select_product')}</option>
                                 {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                             </select>
                         </div>
                         <div>
-                            <label className="text-xs font-bold mb-1 block">Rating</label>
-                            <div className="flex gap-2">
+                            <label className="text-xs font-bold mb-1.5 block uppercase text-muted-foreground">Rating</label>
+                            <div className="flex gap-2 bg-muted/30 p-2 rounded-xl w-fit">
                                 {[1,2,3,4,5].map(star => (
                                     <button 
                                         type="button"
@@ -242,30 +327,71 @@ export default function DashboardReviewsPage() {
                             </div>
                         </div>
                         <div>
-                            <label className="text-xs font-bold mb-1 block">Username Display</label>
+                            <label className="text-xs font-bold mb-1.5 block uppercase text-muted-foreground">{t('dash.reviews.username')}</label>
                             <input 
                                 type="text"
-                                className="w-full bg-background border border-border rounded-lg p-2 text-sm"
+                                className="w-full bg-background border border-border rounded-xl p-3 text-sm focus:ring-2 ring-primary/20 outline-none"
                                 value={newReview.username}
                                 onChange={e => setNewReview({...newReview, username: e.target.value})}
                             />
                         </div>
                         <div>
-                            <label className="text-xs font-bold mb-1 block">Comment</label>
+                            <label className="text-xs font-bold mb-1.5 block uppercase text-muted-foreground">{t('dash.reviews.comment')}</label>
                             <textarea 
-                                className="w-full bg-background border border-border rounded-lg p-2 text-sm h-24"
+                                className="w-full bg-background border border-border rounded-xl p-3 text-sm h-28 focus:ring-2 ring-primary/20 outline-none resize-none"
                                 value={newReview.comment}
                                 onChange={e => setNewReview({...newReview, comment: e.target.value})}
-                                placeholder="Review content..."
+                                placeholder={t('dash.reviews.content_placeholder')}
                                 required
                             />
                         </div>
-                        <button className="w-full bg-primary text-primary-foreground font-bold py-3 rounded-xl hover:opacity-90">
-                            Post Review
+                        <button className="w-full bg-primary text-primary-foreground font-bold py-3.5 rounded-xl hover:opacity-90 shadow-lg shadow-primary/20 mt-2">
+                            {t('dash.reviews.post')}
                         </button>
                     </form>
                 </div>
             </div>
+        )}
+
+        {/* Delete Confirmation Modal */}
+        {deleteData && (
+             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+                <div className="bg-card w-full max-w-sm rounded-2xl shadow-2xl border border-destructive/20 overflow-hidden animate-in zoom-in-95 duration-200">
+                    <div className="p-6 text-center space-y-4">
+                        <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-2 text-red-600">
+                            <Trash2 className="w-8 h-8" />
+                        </div>
+                        <div>
+                            <h3 className="text-xl font-bold mb-1">
+                                {deleteData.type === 'review' 
+                                    ? (t('dash.delete_review_title') || 'Delete Review?')
+                                    : (t('dash.delete_reply_title') || 'Delete Reply?')
+                                }
+                            </h3>
+                            <p className="text-muted-foreground text-sm leading-relaxed">
+                                {deleteData.type === 'review'
+                                    ? (t('dash.delete_review_confirm') || 'This will permanently remove this review and any replies. This action cannot be undone.')
+                                    : (t('dash.delete_reply_confirm') || 'This will permanently remove your reply to this review.')
+                                }
+                            </p>
+                        </div>
+                        <div className="flex gap-3 pt-4">
+                            <button 
+                                onClick={() => setDeleteData(null)}
+                                className="flex-1 py-3 bg-muted hover:bg-muted/80 text-foreground font-bold rounded-xl transition-colors"
+                            >
+                                {t('common.cancel') || 'Cancel'}
+                            </button>
+                            <button 
+                                onClick={confirmDelete}
+                                className="flex-1 py-3 bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl transition-colors shadow-lg shadow-red-500/20"
+                            >
+                                {t('common.delete') || 'Delete'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+             </div>
         )}
     </div>
   )

@@ -13,6 +13,21 @@ export function useAuth() {
   const router = useRouter()
 
   useEffect(() => {
+    // 1. Check active session immediately
+    const initSession = async () => {
+        const { data: { session } } = await supabase.auth.getSession()
+        setSession(session)
+        setUser(session?.user ?? null)
+        
+        if (session?.user) {
+             const { data } = await supabase.from('profiles').select('role').eq('id', session.user.id).single()
+             setRole(data?.role || 'user')
+        }
+        setLoading(false)
+    }
+    initSession()
+
+    // 2. Listen for changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
         setSession(session)
@@ -25,12 +40,6 @@ export function useAuth() {
                 .eq('id', session.user.id)
                 .single()
             
-            if (error) {
-                console.error('Error fetching role:', error)
-            } else {
-                console.log('Fetched role:', data?.role)
-            }
-
             setRole(data?.role || 'user')
         } else {
             setRole(null)

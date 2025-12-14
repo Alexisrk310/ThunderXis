@@ -51,17 +51,44 @@ export default function ProductDetailsPage() {
   if (loading) return <div className="min-h-screen pt-24 flex justify-center"><div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div></div>
   if (!product) return <div className="min-h-screen pt-24 text-center">{t('product.not_found')}</div>
 
+  const checkStock = (size: string) => {
+    if (product.stock_by_size && typeof product.stock_by_size === 'object') {
+        return (product.stock_by_size[size] || 0) > 0
+    }
+    return product.stock > 0
+  }
+
+  const getAvailableStock = (size: string) => {
+    if (product.stock_by_size && typeof product.stock_by_size === 'object') {
+        return product.stock_by_size[size] || 0
+    }
+    return product.stock || 0
+  }
+
   const handleAddToCart = () => {
-    addItem({
+    if (!checkStock(selectedSize)) {
+        addToast(t('cart.error_stock_limit'), 'error')
+        return
+    }
+
+    const availableStock = getAvailableStock(selectedSize)
+
+    const success = addItem({
       id: product.id,
       name: product.name,
       price: product.price,
       image_url: product.image_url, // Keep main image for cart
       description: product.description,
       quantity: quantity,
-      size: selectedSize
+      size: selectedSize,
+      stock: availableStock // Pass individual size stock
     })
-    addToast(`${t('cart.added_success')} (${selectedSize} x${quantity})`, 'success')
+    
+    if (success) {
+        addToast(`${t('cart.added_success')} (${selectedSize} x${quantity})`, 'success')
+    } else {
+        addToast(t('cart.stock_limit_reached') || 'Cannot add more items than available in stock', 'error')
+    }
   }
 
   // Ensure images array exists, fallback to single image_url if not
@@ -124,7 +151,7 @@ export default function ProductDetailsPage() {
                         </span>
                     )}
                     <h1 className="text-4xl md:text-5xl font-black mb-4 text-foreground tracking-tight">{product.name}</h1>
-                    <p className="text-lg text-primary font-medium tracking-wide uppercase">{product.category || 'Collection'}</p>
+                    <p className="text-lg text-primary font-medium tracking-wide uppercase">{product.category || t('cat.collection_fallback')}</p>
                    
                     {product.sale_price ? (
                         <div className="flex items-baseline gap-4 mt-4">
@@ -135,7 +162,7 @@ export default function ProductDetailsPage() {
                                 {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP' }).format(product.price)}
                             </p>
                             <span className="px-2 py-1 bg-red-100 text-red-600 text-xs font-bold uppercase rounded-lg">
-                                {Math.round(((product.price - product.sale_price) / product.price) * 100)}% OFF
+                                {Math.round(((product.price - product.sale_price) / product.price) * 100)}% {t('product.off')}
                             </span>
                         </div>
                     ) : (
@@ -150,9 +177,9 @@ export default function ProductDetailsPage() {
                 </div>
                 
                 <div className="flex items-center gap-3 text-sm font-medium p-4 bg-muted/30 rounded-xl border border-border/50">
-                    <div className={`w-2.5 h-2.5 rounded-full ${(product.stock || 0) > 0 ? 'bg-emerald-500' : 'bg-red-500'}`} />
-                    <span className={(product.stock || 0) > 0 ? 'text-emerald-600' : 'text-red-500'}>
-                        {(product.stock || 0) > 0 ? `${product.stock} ${t('product.available_stock')}` : t('product.out_of_stock')}
+                    <div className={`w-2.5 h-2.5 rounded-full ${getAvailableStock(selectedSize) > 0 ? 'bg-emerald-500' : 'bg-red-500'}`} />
+                    <span className={getAvailableStock(selectedSize) > 0 ? 'text-emerald-600' : 'text-red-500'}>
+                        {getAvailableStock(selectedSize) > 0 ? `${getAvailableStock(selectedSize)} ${t('product.available_stock')}` : t('product.out_of_stock')}
                     </span>
                 </div>
 
@@ -164,18 +191,29 @@ export default function ProductDetailsPage() {
                            <button className="text-xs text-primary hover:underline font-medium">{t('product.size_guide')}</button>
                        </div>
                        <div className="flex gap-3 flex-wrap">
-                          {((product as any).sizes?.length > 0 ? (product as any).sizes : ['S', 'M', 'L', 'XL']).map((size: string) => (
-                              <button
-                                key={size}
-                                onClick={() => setSelectedSize(size)}
-                                className={`w-14 h-14 rounded-2xl flex items-center justify-center font-bold border-2 transition-all duration-200
-                                    ${selectedSize === size 
-                                        ? 'bg-primary text-white border-primary shadow-lg shadow-primary/25 scale-105' 
-                                        : 'bg-background border-border text-foreground hover:border-primary/50'}`}
-                              >
-                                  {size}
-                              </button>
-                          ))}
+                          {((product as any).sizes?.length > 0 ? (product as any).sizes : ['S', 'M', 'L', 'XL']).map((size: string) => {
+                              const isAvailable = product.stock_by_size ? (product.stock_by_size[size] || 0) > 0 : (product.stock || 0) > 0
+                              return (
+                                  <button
+                                    key={size}
+                                    disabled={!isAvailable}
+                                    onClick={() => {
+                                        if (isAvailable) setSelectedSize(size)
+                                    }}
+                                    className={`relative w-14 h-14 rounded-2xl flex items-center justify-center font-bold border-2 transition-all duration-200
+                                        ${selectedSize === size 
+                                            ? 'bg-primary text-white border-primary shadow-lg shadow-primary/25 scale-105' 
+                                            : isAvailable ? 'bg-background border-border text-foreground hover:border-primary/50' : 'bg-muted border-border text-muted-foreground opacity-50 cursor-not-allowed'}`}
+                                  >
+                                      {size}
+                                      {!isAvailable && (
+                                          <div className="absolute inset-0 flex items-center justify-center">
+                                              <div className="w-full h-0.5 bg-red-500/50 rotate-45 transform origin-center" />
+                                          </div>
+                                      )}
+                                  </button>
+                              )
+                          })}
                        </div>
                     </div>
 
@@ -191,8 +229,9 @@ export default function ProductDetailsPage() {
                           </button>
                           <span className="w-10 text-center font-bold text-lg text-foreground">{quantity}</span>
                           <button 
-                            onClick={() => setQuantity(q => q + 1)}
-                            className="w-10 h-10 bg-background hover:bg-muted rounded-lg flex items-center justify-center transition-colors text-foreground shadow-sm border border-border/50"
+                            onClick={() => setQuantity(q => Math.min(getAvailableStock(selectedSize), q + 1))}
+                            className={`w-10 h-10 bg-background hover:bg-muted rounded-lg flex items-center justify-center transition-colors text-foreground shadow-sm border border-border/50 ${quantity >= getAvailableStock(selectedSize) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            disabled={quantity >= getAvailableStock(selectedSize)}
                           >
                             +
                           </button>

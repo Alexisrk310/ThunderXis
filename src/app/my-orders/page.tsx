@@ -216,7 +216,7 @@ export default function MyOrdersPage() {
                                     <span className="font-mono text-sm text-muted-foreground">#{order.id.slice(0, 8)}</span>
                                     <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(order.status)}`}>
                                         {getStatusIcon(order.status)}
-                                        <span className="capitalize">{order.status}</span>
+                                        <span className="capitalize">{t(`my_orders.status.${order.status.toLowerCase()}`)}</span>
                                     </span>
                                 </div>
                                 <div className="text-sm text-muted-foreground flex items-center gap-2">
@@ -246,7 +246,7 @@ export default function MyOrdersPage() {
                                         <div>
                                             <p className="text-sm font-bold">{item.products?.name || 'Product'}</p>
                                             <p className="text-xs text-muted-foreground">
-                                                Qty: {item.quantity} • {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP' }).format(item.price_at_time)}
+                                                {t('my_orders.qty')}: {item.quantity} • {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP' }).format(item.price_at_time)}
                                             </p>
                                         </div>
                                     </div>
@@ -286,7 +286,7 @@ export default function MyOrdersPage() {
                         className="bg-card w-full max-w-md rounded-2xl shadow-xl border border-border overflow-hidden"
                     >
                         <div className="flex justify-between items-center p-4 border-b border-border">
-                            <h3 className="font-bold">Rate Product</h3>
+                            <h3 className="font-bold">{t('reviews.modal_title')}</h3>
                             <button onClick={() => setRatingModal(prev => ({ ...prev, isOpen: false }))}>
                                 <X className="w-5 h-5" />
                             </button>
@@ -302,7 +302,7 @@ export default function MyOrdersPage() {
                                 </div>
                                 <div className="space-y-1">
                                     <p className="font-bold line-clamp-2 text-sm">{ratingModal.productName}</p>
-                                    <p className="text-xs text-muted-foreground">Share your experience!</p>
+                                    <p className="text-xs text-muted-foreground">{t('reviews.share_exp')}</p>
                                 </div>
                             </div>
 
@@ -328,10 +328,10 @@ export default function MyOrdersPage() {
 
                             {/* Comment */}
                             <div>
-                                <label className="text-xs font-bold mb-2 block">Your Review</label>
+                                <label className="text-xs font-bold mb-2 block">{t('reviews.label')}</label>
                                 <textarea 
                                     className="w-full bg-background border border-border rounded-xl p-3 text-sm focus:ring-2 focus:ring-primary/50 outline-none h-32 resize-none"
-                                    placeholder="What did you like or dislike? How was the quality?"
+                                    placeholder={t('reviews.placeholder')}
                                     value={ratingModal.comment}
                                     onChange={e => setRatingModal(prev => ({ ...prev, comment: e.target.value }))}
                                     required
@@ -339,7 +339,7 @@ export default function MyOrdersPage() {
                             </div>
 
                             <button type="submit" className="w-full bg-primary text-primary-foreground font-bold py-3 rounded-xl hover:opacity-90 transition-opacity">
-                                Submit Review
+                                {t('reviews.submit')}
                             </button>
                         </form>
                     </motion.div>

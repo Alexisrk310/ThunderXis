@@ -3,7 +3,7 @@
 import React, { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, ShoppingBag, Truck, Users, Settings, LogOut, Home, MessageSquare } from 'lucide-react'
+import { LayoutDashboard, ShoppingBag, Truck, Users, Settings, LogOut, Home, MessageSquare, Shield, Store, X } from 'lucide-react'
 import { useLanguage } from '@/components/LanguageProvider'
 import { useAuth } from '@/hooks/useAuth'
 import { LogoutModal } from '@/components/LogoutModal'
@@ -25,6 +25,7 @@ export function DashboardSidebar({ isOpen, onClose }: DashboardSidebarProps) {
     { href: '/dashboard/orders', label: t('dash.orders'), icon: Truck },
     { href: '/dashboard/reviews', label: t('dash.reviews'), icon: MessageSquare },
     { href: '/dashboard/users', label: t('dash.users'), icon: Users },
+    { href: '/dashboard/security', label: t('profile.security'), icon: Shield },
   ]
 
   const handleLogout = async () => {
@@ -42,14 +43,22 @@ export function DashboardSidebar({ isOpen, onClose }: DashboardSidebarProps) {
         />
       )}
 
-      <aside className={`fixed left-0 top-0 h-full w-64 bg-card/95 backdrop-blur-sm border-r border-border/50 pt-24 pb-8 px-4 flex flex-col z-50 transition-transform duration-300 ${isOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'} lg:translate-x-0 lg:shadow-none`}>
+      <aside className={`fixed left-0 top-0 h-full w-64 bg-card/95 backdrop-blur-md border-r border-border/50 pt-6 pb-8 px-4 flex flex-col z-50 transition-transform duration-300 ${isOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'} lg:translate-x-0 lg:shadow-none`}>
          {/* Header */}
-         <div className="mb-8 px-3">
-            <h2 className="text-lg font-bold text-foreground">
-              ThunderXis <span className="text-primary">{t('dash.admin')}</span>
-            </h2>
-            <p className="text-xs text-muted-foreground mt-1">{t('dash.panel')}</p>
+         <div className="mb-8 px-3 flex items-center justify-between">
+            <div>
+                <h2 className="text-lg font-bold text-foreground">
+                ThunderXis <span className="text-primary">{t('dash.admin')}</span>
+                </h2>
+                <p className="text-xs text-muted-foreground mt-1">{t('dash.panel')}</p>
+            </div>
+            {/* Mobile Close Button */}
+            <button onClick={onClose} className="lg:hidden p-1 hover:bg-muted rounded-md transition-colors">
+                <X className="w-5 h-5 text-muted-foreground" />
+            </button>
          </div>
+
+
 
          {/* Navigation */}
          <nav className="flex-1 space-y-1">
@@ -81,13 +90,10 @@ export function DashboardSidebar({ isOpen, onClose }: DashboardSidebarProps) {
 
          {/* Footer */}
          <div className="mt-auto pt-6 border-t border-border/50 space-y-1">
-            <Link 
-               href="/"
-               className="group flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all w-full font-medium text-sm"
-            >
-               <Home className="w-5 h-5" />
-               <span>{t('nav.home') || 'Go to Store'}</span>
-            </Link>
+             <Link href="/" className="flex items-center gap-3 text-muted-foreground hover:text-foreground transition-colors p-2 rounded-lg hover:bg-muted/50">
+                <Store className="w-5 h-5" />
+                <span className="font-medium">{t('nav.go_to_store')}</span>
+             </Link>
             <button 
                onClick={() => setIsLogoutModalOpen(true)}
                className="group flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:text-red-400 hover:bg-red-500/5 transition-all w-full font-medium text-sm"

@@ -44,6 +44,17 @@ export default function LoginPage() {
         setLoading(true);
         setError(null);
 
+        if (!formData.email) {
+            setError(t('auth.error.email_required'));
+            setLoading(false);
+            return;
+        }
+        if (!formData.password) {
+            setError(t('auth.error.password_required'));
+            setLoading(false);
+            return;
+        }
+
 		const { error } = await supabase.auth.signInWithPassword({
             email: formData.email,
             password: formData.password,
@@ -160,7 +171,7 @@ export default function LoginPage() {
 									<Input
 										id="email"
 										type="email"
-										placeholder="tu@correo.com"
+										placeholder={t('auth.placeholder.email')}
 										value={formData.email}
 										onChange={(e) => setFormData({ ...formData, email: e.target.value })}
 										required
@@ -178,7 +189,7 @@ export default function LoginPage() {
 									<Input
 										id="password"
 										type="password"
-										placeholder="••••••••"
+										placeholder={t('auth.placeholder.password')}
 										value={formData.password}
 										onChange={(e) => setFormData({ ...formData, password: e.target.value })}
 										required

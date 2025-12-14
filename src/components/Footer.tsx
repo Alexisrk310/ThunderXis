@@ -8,7 +8,7 @@ export default function Footer() {
   const { t } = useLanguage()
 
   return (
-    <footer className="bg-black border-t border-white/5 pt-16 pb-8">
+    <footer className="bg-black border-t border-white/5 pt-16 pb-8 text-white">
       <div className="max-w-7xl mx-auto px-6">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
           
@@ -22,7 +22,7 @@ export default function Footer() {
                 ThunderXis
               </span>
             </Link>
-            <p className="text-sm text-muted-foreground leading-relaxed">
+            <p className="text-sm text-zinc-400 leading-relaxed">
               {t('footer.description')}
             </p>
             <div className="flex gap-4 pt-2">
@@ -34,8 +34,8 @@ export default function Footer() {
 
           {/* Links Column */}
           <div>
-            <h4 className="font-bold mb-6">{t('footer.shop')}</h4>
-            <ul className="space-y-3 text-sm text-muted-foreground">
+            <h4 className="font-bold mb-6 text-white">{t('footer.shop')}</h4>
+            <ul className="space-y-3 text-sm text-zinc-400">
               <li><Link href="/shop" className="hover:text-primary transition-colors">{t('footer.links.men')}</Link></li>
               <li><Link href="/shop" className="hover:text-primary transition-colors">{t('footer.links.women')}</Link></li>
               <li><Link href="/descuentos" className="hover:text-primary transition-colors">{t('footer.links.sale')}</Link></li>
@@ -45,8 +45,8 @@ export default function Footer() {
 
           {/* Help Column */}
           <div>
-            <h4 className="font-bold mb-6">{t('footer.help')}</h4>
-            <ul className="space-y-3 text-sm text-muted-foreground">
+            <h4 className="font-bold mb-6 text-white">{t('footer.help')}</h4>
+            <ul className="space-y-3 text-sm text-zinc-400">
               <li><Link href="#" className="hover:text-primary transition-colors">{t('footer.help.shipping')}</Link></li>
               <li><Link href="#" className="hover:text-primary transition-colors">{t('footer.help.returns')}</Link></li>
               <li><Link href="#" className="hover:text-primary transition-colors">{t('footer.help.contact')}</Link></li>
@@ -56,13 +56,13 @@ export default function Footer() {
 
           {/* Newsletter Column */}
           <div>
-            <h4 className="font-bold mb-6">{t('footer.newsletter')}</h4>
-            <p className="text-sm text-muted-foreground mb-4">{t('footer.newsletter.desc')}</p>
+            <h4 className="font-bold mb-6 text-white">{t('footer.newsletter')}</h4>
+            <p className="text-sm text-zinc-400 mb-4">{t('footer.newsletter.desc')}</p>
             <form className="flex gap-2">
               <input 
                 type="email" 
                 placeholder={t('auth.email')} 
-                className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary transition-colors"
+                className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary transition-colors text-white placeholder:text-zinc-600"
               />
               <button 
                 type="submit"
@@ -72,15 +72,15 @@ export default function Footer() {
               </button>
             </form>
             <div className="mt-6 space-y-2">
-                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                 <div className="flex items-center gap-2 text-xs text-zinc-400">
                     <MapPin className="w-3 h-3 text-primary" />
                     <span>{t('footer.address')}</span>
                  </div>
-                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                 <div className="flex items-center gap-2 text-xs text-zinc-400">
                     <Phone className="w-3 h-3 text-primary" />
                     <span>+57 300 123 4567</span>
                  </div>
-                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                 <div className="flex items-center gap-2 text-xs text-zinc-400">
                     <Mail className="w-3 h-3 text-primary" />
                     <span>support@thunderxis.com</span>
                  </div>
@@ -90,7 +90,7 @@ export default function Footer() {
         </div>
         
         <div className="border-t border-white/5 pt-8 text-center">
-          <p className="text-xs text-muted-foreground">
+          <p className="text-xs text-zinc-500">
             &copy; {new Date().getFullYear()} ThunderXis. {t('footer.rights')}
           </p>
         </div>
