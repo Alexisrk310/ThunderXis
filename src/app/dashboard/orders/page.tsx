@@ -90,13 +90,13 @@ export default function DashboardOrders() {
         .from('orders')
         .select(`
           *,
-          order_items!fk_order_items_orders (
+          order_items!order_items_order_id_fkey (
             id,
             quantity,
             price,
             product_name,
             size,
-            products!fk_order_items_products (
+            products (
               image_url,
               images,
               name
