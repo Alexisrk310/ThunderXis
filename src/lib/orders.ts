@@ -1,12 +1,17 @@
 import { createClient } from '@supabase/supabase-js';
 
 // Admin client for backend operations
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
-
 export async function confirmOrder(orderId: string) {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+
+  if (!supabaseKey) {
+    throw new Error('Missing SUPABASE_SERVICE_ROLE_KEY')
+  }
+
+  // Admin client for backend operations
+  const supabaseAdmin = createClient(supabaseUrl, supabaseKey);
+
   // 1. Fetch Order
   const { data: order, error: orderError } = await supabaseAdmin
       .from('orders')
