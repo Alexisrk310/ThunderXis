@@ -55,7 +55,7 @@ export default function ProductDetailsPage() {
     if (product.stock_by_size && typeof product.stock_by_size === 'object') {
         return (product.stock_by_size[size] || 0) > 0
     }
-    return product.stock > 0
+    return (product.stock || 0) > 0
   }
 
   const getAvailableStock = (size: string) => {
