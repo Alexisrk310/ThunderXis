@@ -14,21 +14,6 @@ export default function SuccessPage() {
 
   useEffect(() => {
     // Only send email if we have items (before clearing)
-    // In a real app, you'd pass the order ID via query params to fetch details
-    // For this demo, we'll try to use the last state or better yet, assume 'pending' page handles it?
-    // Actually, MercadoPago redirect loses state usually. 
-    // Ideally, we rely on the webhook.
-    // BUT, for this specific request "Transactional Emails", we will trigger it here for immediate gratification
-    // assuming we could persist the "latest order" in local storage or fetched from DB if we had the ID.
-    
-    // To make this robust without ID in URL:
-    // We will skip sending HERE effectively because we don't have the order data handy after redirect.
-    // The PRO way is Webhooks.
-    // The SEMI-PRO way is: /success?order_id=123
-    
-    // Let's assume the user wants it working now. 
-    // I will mock the data or try to fetch the last order for the logged in user?
-    // Fetching last order is safer.
     
     const sendEmail = async () => {
       try {
@@ -38,7 +23,7 @@ export default function SuccessPage() {
 
          const { data: orders } = await import('@/lib/supabase/client').then(m => m.supabase
             .from('orders')
-            .select('*, order_items(*)')
+            .select('*, order_items(*, products(name))')
             .eq('user_id', user.id)
             .order('created_at', { ascending: false })
             .limit(1)
@@ -57,16 +42,28 @@ export default function SuccessPage() {
              const orderDate = new Date(orders[0].created_at).getTime()
              if (Date.now() - orderDate > 5 * 60 * 1000) return 
 
+             // Get name
+             const name = user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || 'Cliente'
+
+             // Map items for email
+             const emailItems = (orders[0].order_items || []).map((item: any) => ({
+                 name: item.products?.name || 'Producto',
+                 size: item.size || 'N/A',
+                 quantity: item.quantity,
+                 price: item.price_at_time || item.price || 0
+             }))
+
              // Send Email
              await fetch('/api/send-email', {
                  method: 'POST',
                  body: JSON.stringify({
                      type: 'order_confirmation',
                      payload: {
+                         name,
                          email: user.email,
                          orderId: orders[0].id,
                          total: orders[0].total,
-                         items: orders[0].order_items || [], 
+                         items: emailItems, 
                          lang: language
                      }
                  })

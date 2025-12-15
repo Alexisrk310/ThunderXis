@@ -10,6 +10,8 @@ import Image from 'next/image'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 
+import { updateOrderStatus } from '@/actions/orders'
+
 interface OrderItem {
   id: string
   product_id: string
@@ -33,6 +35,8 @@ interface Order {
   total: number
   status: string
   user_id: string
+  carrier?: string
+  tracking_number?: string
   order_items: OrderItem[]
 }
 
@@ -77,10 +81,36 @@ export default function DashboardOrders() {
   // Modal States
   const [confirmData, setConfirmData] = useState<{ id: string, status: string } | null>(null)
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
+  const [carrier, setCarrier] = useState('')
+  const [trackingNumber, setTrackingNumber] = useState('')
 
   useEffect(() => {
     fetchOrders()
   }, [])
+
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    if (selectedOrder || confirmData) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = 'unset'
+    }
+    return () => {
+      document.body.style.overflow = 'unset'
+    }
+  }, [selectedOrder, confirmData])
+
+  // Handle Escape key to close modals
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (selectedOrder) setSelectedOrder(null)
+        if (confirmData) setConfirmData(null)
+      }
+    }
+    window.addEventListener('keydown', handleEscape)
+    return () => window.removeEventListener('keydown', handleEscape)
+  }, [selectedOrder, confirmData])
 
   const fetchOrders = async () => {
     try {
@@ -115,6 +145,8 @@ export default function DashboardOrders() {
 
   const initiateUpdate = (orderId: string, newStatus: string) => {
     setConfirmData({ id: orderId, status: newStatus })
+    setCarrier('')
+    setTrackingNumber('')
   }
 
   const performUpdate = async () => {
@@ -125,20 +157,17 @@ export default function DashboardOrders() {
     setConfirmData(null)
 
     try {
-      const { error } = await supabase
-        .from('orders')
-        .update({ status: status })
-        .eq('id', id)
+      const result = await updateOrderStatus(id, status, carrier, trackingNumber)
 
-      if (!error) {
+      if (result.success) {
         await fetchOrders()
           // Update selected order if open
         if (selectedOrder && selectedOrder.id === id) {
              const updated = orders.find(o => o.id === id)
-             if (updated) setSelectedOrder({...updated, status})
+             if (updated) setSelectedOrder({...updated, status, carrier, tracking_number: trackingNumber})
         }
       } else {
-        alert(t('dash.error_update_order'))
+        alert(t('dash.error_update_order') + ': ' + result.error)
       }
     } catch (error) {
       console.error('Error:', error)
@@ -193,11 +222,11 @@ export default function DashboardOrders() {
     doc.setTextColor(255, 255, 255)
     doc.setFontSize(22)
     doc.setFont('helvetica', 'bold')
-    doc.text('FACTURA DE VENTA', 20, 25)
+    doc.text(t('invoice.title'), 20, 25)
     
     doc.setFontSize(10)
     doc.setFont('helvetica', 'normal')
-    doc.text(`Orden #${order.id.slice(0, 8).toUpperCase()}`, 190, 25, { align: 'right' })
+    doc.text(`${t('invoice.order_num')}${order.id.slice(0, 8).toUpperCase()}`, 190, 25, { align: 'right' })
 
     // -- Brand / Company Info (Placeholder) --
     doc.setTextColor(0, 0, 0)
@@ -215,7 +244,7 @@ export default function DashboardOrders() {
     // -- Customer Info --
     doc.setFontSize(12)
     doc.setFont('helvetica', 'bold')
-    doc.text('CLIENTE', 120, 55)
+    doc.text(t('invoice.customer_title'), 120, 55)
     
     doc.setFontSize(9)
     doc.setFont('helvetica', 'normal')
@@ -225,8 +254,8 @@ export default function DashboardOrders() {
     doc.text(`${order.city} - Tel: ${order.phone}`, 120, 72)
     
     // -- Dates --
-    doc.text(`Fecha: ${new Date(order.created_at).toLocaleDateString('es-CO')}`, 20, 85)
-    doc.text(`Estado: ${t(`dash.${order.status}`).toUpperCase()}`, 120, 85)
+    doc.text(`${t('invoice.date')} ${new Date(order.created_at).toLocaleDateString('es-CO')}`, 20, 85)
+    doc.text(`${t('invoice.status')} ${t(`dash.${order.status}`).toUpperCase()}`, 120, 85)
 
     // -- Table --
     const tableColumn = [t('dash.table_product'), t('dash.table_qty'), t('dash.table_price'), t('dash.table_total')]
@@ -272,8 +301,8 @@ export default function DashboardOrders() {
     // -- Footer --
     doc.setFontSize(8)
     doc.setTextColor(100, 100, 100)
-    doc.text('Gracias por su compra.', 105, 280, { align: 'center' })
-    doc.text('Esta factura electrónica se genera por computador.', 105, 285, { align: 'center' })
+    doc.text(t('invoice.thanks'), 105, 280, { align: 'center' })
+    doc.text(t('invoice.generated'), 105, 285, { align: 'center' })
 
     doc.save(`Factura_Nomada_${order.id.slice(0, 8)}.pdf`)
   }
@@ -355,15 +384,16 @@ export default function DashboardOrders() {
         </div>
       ) : (
         <div className="bg-card border border-border rounded-3xl shadow-sm overflow-hidden">
-            <div className="overflow-x-auto">
+            {/* Desktop Table */}
+            <div className="hidden md:block overflow-x-auto">
                 <table className="w-full text-left text-sm">
                     <thead>
                         <tr className="border-b border-border/50 bg-muted/20">
-                            <th className="px-6 py-4 font-bold text-muted-foreground uppercase tracking-wider text-xs"># ID</th>
+                            <th className="px-6 py-4 font-bold text-muted-foreground uppercase tracking-wider text-xs">#{t('dash.order_id')}</th>
                             <th className="px-6 py-4 font-bold text-muted-foreground uppercase tracking-wider text-xs">{t('dash.customer_label')}</th>
                             <th className="px-6 py-4 font-bold text-muted-foreground uppercase tracking-wider text-xs">{t('dash.date_label')}</th>
                             <th className="px-6 py-4 font-bold text-muted-foreground uppercase tracking-wider text-xs">{t('checkout.total')}</th>
-                            <th className="px-6 py-4 font-bold text-muted-foreground uppercase tracking-wider text-xs">Status</th>
+                            <th className="px-6 py-4 font-bold text-muted-foreground uppercase tracking-wider text-xs">{t('dash.status')}</th>
                             <th className="px-6 py-4 font-bold text-muted-foreground uppercase tracking-wider text-xs text-right">{t('dash.actions')}</th>
                         </tr>
                     </thead>
@@ -456,6 +486,87 @@ export default function DashboardOrders() {
                         ))}
                     </tbody>
                 </table>
+            </div>
+
+            {/* Mobile Card View */}
+            <div className="md:hidden">
+                <div className="flex flex-col">
+                    {filteredOrders.map((order) => (
+                        <div key={order.id} className="p-4 border-b border-border/50 last:border-0 hover:bg-muted/5 transition-colors">
+                            {/* Header: ID & Status */}
+                            <div className="flex justify-between items-start mb-3">
+                                <div className="flex items-center gap-2">
+                                    <span className="font-mono text-xs font-bold bg-muted px-2 py-1 rounded text-foreground/80">
+                                        #{order.id.slice(0, 8)}
+                                    </span>
+                                    <span className="text-xs text-muted-foreground">
+                                        {new Date(order.created_at).toLocaleDateString('es-CO', { day: 'numeric', month: 'short' })}
+                                    </span>
+                                </div>
+                                <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold capitalize ${getStatusColor(order.status)}`}>
+                                    <span className={`w-1 h-1 rounded-full ${getStatusDot(order.status)} animate-pulse`}></span>
+                                    {t(`dash.${order.status}`)}
+                                </span>
+                            </div>
+                            
+                            {/* Main Info */}
+                            <div className="flex items-center gap-3 mb-3">
+                                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center text-white font-bold text-xs shadow-sm">
+                                    {order.customer_name?.charAt(0) || 'U'}
+                                </div>
+                                <div>
+                                    <h4 className="font-bold text-foreground text-sm">{order.customer_name}</h4>
+                                    <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                        <MapPin className="w-3 h-3" /> {order.city || t('dash.na')}
+                                    </p>
+                                </div>
+                                <div className="ml-auto text-right">
+                                    <p className="font-black text-foreground">{formatCurrency(order.total)}</p>
+                                    <p className="text-[10px] text-muted-foreground">{order.order_items.length} items</p>
+                                </div>
+                            </div>
+                            
+                            {/* Actions Footer */}
+                            <div className="flex items-center justify-between pt-2 border-t border-border/30 mt-2">
+                                <div className="flex gap-2">
+                                     {/* Status Actions (Compact) */}
+                                     {order.status === 'pending' && (
+                                        <button 
+                                            onClick={() => initiateUpdate(order.id, 'paid')}
+                                            className="p-1.5 bg-blue-50 text-blue-600 rounded-lg"
+                                        >
+                                            <CreditCard className="w-4 h-4" />
+                                        </button>
+                                    )}
+                                    {order.status === 'paid' && (
+                                        <button 
+                                            onClick={() => initiateUpdate(order.id, 'shipped')}
+                                            className="p-1.5 bg-purple-50 text-purple-600 rounded-lg"
+                                        >
+                                            <Truck className="w-4 h-4" />
+                                        </button>
+                                    )}
+                                    {order.status === 'shipped' && (
+                                        <button 
+                                            onClick={() => initiateUpdate(order.id, 'delivered')}
+                                            className="p-1.5 bg-green-50 text-green-600 rounded-lg"
+                                        >
+                                            <CheckCircle className="w-4 h-4" />
+                                        </button>
+                                    )}
+                                </div>
+
+                                <button 
+                                    onClick={() => setSelectedOrder(order)}
+                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-white rounded-lg text-xs font-bold shadow-md shadow-primary/20"
+                                >
+                                    <Eye className="w-3 h-3" />
+                                    {t('products.details')}
+                                </button>
+                            </div>
+                        </div>
+                    ))}
+                </div>
             </div>
         </div>
       )}
@@ -556,6 +667,13 @@ export default function DashboardOrders() {
                                 <p className="text-[10px] uppercase tracking-wide text-green-600 dark:text-green-400 font-bold mt-2">
                                     {t('dash.included_badge')}
                                 </p>
+                                {(selectedOrder.carrier || selectedOrder.tracking_number) && (
+                                    <div className="mt-4 pt-3 border-t border-green-200/50 dark:border-green-800/50">
+                                        <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">{t('dash.tracking_label')}</p>
+                                        {selectedOrder.carrier && <p className="text-xs font-medium text-foreground">{selectedOrder.carrier}</p>}
+                                        {selectedOrder.tracking_number && <p className="text-xs font-mono text-muted-foreground bg-white/50 dark:bg-black/20 p-1 rounded inline-block mt-1">{selectedOrder.tracking_number}</p>}
+                                    </div>
+                                )}
                             </div>
                         </div>
 
@@ -567,7 +685,7 @@ export default function DashboardOrders() {
                                     {t('cart.items')}
                                 </h3>
                                 <span className="text-sm text-muted-foreground font-medium">
-                                    {selectedOrder.order_items?.length || 0} {selectedOrder.order_items?.length === 1 ? 'producto' : 'productos'}
+                                    {selectedOrder.order_items?.length || 0} {selectedOrder.order_items?.length === 1 ? t('dash.item_one') : t('dash.item_many')}
                                 </span>
                             </div>
                             
@@ -592,8 +710,8 @@ export default function DashboardOrders() {
                                                                 return img ? (
                                                                     <Image 
                                                                         src={img} 
-                                                                        alt={item.products?.name || 'Producto'} 
-                                                                        fill 
+                                                                        alt={item.products?.name || t('dash.product')} 
+                                                                        fill  
                                                                         className="object-cover" 
                                                                     />
                                                                 ) : (
@@ -602,7 +720,7 @@ export default function DashboardOrders() {
                                                             })()}
                                                         </div>
                                                         <div>
-                                                            <p className="font-bold text-foreground mb-1">{item.products?.name || 'Producto'}</p>
+                                                            <p className="font-bold text-foreground mb-1">{item.products?.name || t('dash.product')}</p>
                                                         </div>
                                                     </div>
                                                 </td>
@@ -625,14 +743,14 @@ export default function DashboardOrders() {
                         {/* Order Summary */}
                         <div className="flex justify-end">
                             <div className="w-full md:w-96 bg-gradient-to-br from-muted/50 to-muted/30 p-6 rounded-2xl border-2 border-border/50 shadow-lg">
-                                <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-4">Resumen del pedido</h3>
+                                <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-4">{t('dash.summary_title')}</h3>
                                 <div className="space-y-3">
                                     <div className="flex justify-between items-center">
-                                        <span className="text-sm text-muted-foreground">Subtotal</span>
+                                        <span className="text-sm text-muted-foreground">{t('checkout.subtotal')}</span>
                                         <span className="font-semibold text-foreground">{formatCurrency(selectedOrder.total)}</span>
                                     </div>
                                     <div className="flex justify-between items-center">
-                                        <span className="text-sm text-muted-foreground">Envío</span>
+                                        <span className="text-sm text-muted-foreground">{t('dash.shipping_label')}</span>
                                         <span className="inline-flex items-center gap-1.5 text-xs bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-2.5 py-1 rounded-full font-bold">
                                             <CheckCircle className="w-3 h-3" />
                                             {t('dash.included')}
@@ -640,7 +758,7 @@ export default function DashboardOrders() {
                                     </div>
                                     <div className="h-px bg-border my-3"></div>
                                     <div className="flex justify-between items-center pt-2">
-                                        <span className="font-bold text-xl">Total</span>
+                                        <span className="font-bold text-xl">{t('dash.total_label')}</span>
                                         <span className="font-black text-2xl text-primary">{formatCurrency(selectedOrder.total)}</span>
                                     </div>
                                 </div>
@@ -662,26 +780,48 @@ export default function DashboardOrders() {
                     exit={{ opacity: 0, scale: 0.95 }}
                     className="bg-card w-full max-w-sm rounded-3xl shadow-2xl p-6 border border-border text-center"
                 >
-                    <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <AlertTriangle className="w-8 h-8 text-primary" />
-                    </div>
-                    <h3 className="text-xl font-bold mb-2">{t('dash.confirm_status_title')}</h3>
-                    <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
-                        {t('dash.confirm_status_desc').replace('{status}', t(`dash.${confirmData.status}`))}
-                    </p>
-                    <div className="flex gap-3">
-                        <button 
-                            onClick={() => setConfirmData(null)}
-                            className="flex-1 py-3 rounded-xl border border-border font-bold text-sm hover:bg-muted transition-colors"
-                        >
-                            {t('dash.cancel')}
-                        </button>
-                        <button 
-                            onClick={performUpdate}
-                            className="flex-1 py-3 rounded-xl bg-primary text-white font-bold text-sm hover:opacity-90 transition-opacity shadow-lg shadow-primary/25"
-                        >
-                            {t('dash.confirm_btn')}
-                        </button>
+                    <div className="flex flex-col items-center">
+                        <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <AlertTriangle className="w-8 h-8 text-primary" />
+                        </div>
+                        <h3 className="text-xl font-bold mb-2">{t('dash.confirm_status_title')}</h3>
+                        <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
+                            {t('dash.confirm_status_desc').replace('{status}', t(`dash.${confirmData.status}`))}
+                        </p>
+                        
+                        {confirmData.status === 'shipped' && (
+                            <div className="w-full space-y-3 mb-6">
+                                <input 
+                                    type="text" 
+                                    placeholder={t('dash.carrier_placeholder')}
+                                    value={carrier}
+                                    onChange={(e) => setCarrier(e.target.value)}
+                                    className="w-full px-4 py-2 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                />
+                                <input 
+                                    type="text" 
+                                    placeholder={t('dash.tracking_placeholder')}
+                                    value={trackingNumber}
+                                    onChange={(e) => setTrackingNumber(e.target.value)}
+                                    className="w-full px-4 py-2 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                />
+                            </div>
+                        )}
+
+                        <div className="flex gap-3 w-full">
+                            <button 
+                                onClick={() => setConfirmData(null)}
+                                className="flex-1 py-3 rounded-xl border border-border font-bold text-sm hover:bg-muted transition-colors"
+                            >
+                                {t('dash.cancel')}
+                            </button>
+                            <button 
+                                onClick={performUpdate}
+                                className="flex-1 py-3 rounded-xl bg-primary text-white font-bold text-sm hover:opacity-90 transition-opacity shadow-lg shadow-primary/25"
+                            >
+                                {t('dash.confirm_btn')}
+                            </button>
+                        </div>
                     </div>
                 </motion.div>
             </div>

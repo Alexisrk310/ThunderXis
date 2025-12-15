@@ -43,12 +43,65 @@ export default function MyOrdersPage() {
       rating: 5,
       comment: ''
   })
+  
+  const [userReviews, setUserReviews] = useState<Set<string>>(new Set())
+
+  const [reviewPrompt, setReviewPrompt] = useState<any>(null)
 
   useEffect(() => {
     if (user) {
       fetchOrders()
     }
   }, [user])
+
+  // Auto-Prompt for Reviews (One-time per product)
+  useEffect(() => {
+      if (loading || orders.length === 0) return
+
+      // Find the first product that:
+      // 1. Is delivered
+      // 2. Is NOT reviewed
+      // 3. Has NOT been prompted before (localStorage)
+      let candidateItem: any = null
+      
+      for (const order of orders) {
+          if (['delivered', 'entregado', 'completed'].includes(order.status.toLowerCase())) {
+              for (const item of order.order_items || []) {
+                  if (item.product_id && !userReviews.has(item.product_id)) {
+                      const storageKey = `review_prompt_${item.product_id}`
+                      const alreadyPrompted = localStorage.getItem(storageKey)
+                      
+                      if (!alreadyPrompted) {
+                          candidateItem = item
+                          break // Found one!
+                      }
+                  }
+              }
+          }
+          if (candidateItem) break
+      }
+
+      if (candidateItem) {
+          // Mark as prompted IMMEDIATELY to prevent race conditions
+          localStorage.setItem(`review_prompt_${candidateItem.product_id}`, 'true')
+          
+          // Show interactive prompt instead of modal
+          setTimeout(() => {
+              setReviewPrompt(candidateItem)
+          }, 1000)
+      }
+
+  }, [orders, loading, userReviews])
+
+  // Prevent scrolling when modal is open
+  useEffect(() => {
+    if (ratingModal.isOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = 'unset'
+    }
+    return () => { document.body.style.overflow = 'unset' }
+  }, [ratingModal.isOpen])
 
   const fetchOrders = async () => {
     try {
@@ -62,7 +115,7 @@ export default function MyOrdersPage() {
         .from('orders')
         .select(`
             id, created_at, status, total, shipping_address, city,
-            order_items (
+            order_items:order_items!order_items_order_id_fkey (
                 id, product_id, quantity, price_at_time,
                 products ( name, image_url )
             )
@@ -72,6 +125,19 @@ export default function MyOrdersPage() {
 
       if (error) throw error
       if (data) setOrders(data)
+
+      // Fetch user reviews
+      if (user?.id) {
+        const { data: reviews } = await supabase
+            .from('reviews')
+            .select('product_id')
+            .eq('user_id', user.id)
+        
+        if (reviews) {
+            setUserReviews(new Set(reviews.map(r => r.product_id)))
+        }
+      }
+
     } catch (error: any) {
       console.error('Error fetching orders:', JSON.stringify(error, null, 2))
     } finally {
@@ -107,7 +173,8 @@ export default function MyOrdersPage() {
             .select('id')
             .eq('user_id', user!.id)
             .eq('product_id', item.product_id)
-            .single()
+            .eq('product_id', item.product_id)
+            .maybeSingle()
 
           if (existingReview) {
               addToast(t('reviews.already_reviewed'), 'error')
@@ -125,10 +192,13 @@ export default function MyOrdersPage() {
       })
   }
 
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
   const handleSubmitReview = async (e: React.FormEvent) => {
       e.preventDefault()
-      if (!ratingModal.productId || !user) return
+      if (!ratingModal.productId || !user || isSubmitting) return
 
+      setIsSubmitting(true)
       try {
           const { error } = await supabase.from('reviews').insert({
               user_id: user.id,
@@ -142,11 +212,16 @@ export default function MyOrdersPage() {
           if (error) throw error
 
           addToast(t('reviews.success'), 'success')
+          if (ratingModal.productId) {
+            setUserReviews(prev => new Set(prev).add(ratingModal.productId!))
+          }
           setRatingModal({ isOpen: false, productId: null, productName: '', productImage: '', rating: 5, comment: '' })
 
       } catch (error) {
           console.error('Error submitting review:', error)
           addToast('Error submitting review', 'error')
+      } finally {
+          setIsSubmitting(false)
       }
   }
 
@@ -234,8 +309,10 @@ export default function MyOrdersPage() {
                         </div>
 
                         {/* Order Items List */}
-                        <div className="border-t border-border/50 pt-4 space-y-4">
-                            {order.order_items?.map((item, idx) => (
+                            <div className="border-t border-border/50 pt-4 space-y-4">
+                            {order.order_items?.map((item, idx) => {
+                                const hasReview = item.product_id && userReviews.has(item.product_id)
+                                return (
                                 <div key={idx} className="flex items-center justify-between gap-4">
                                     <div className="flex items-center gap-4">
                                         <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-muted flex-shrink-0">
@@ -250,24 +327,29 @@ export default function MyOrdersPage() {
                                             </p>
                                         </div>
                                     </div>
-                                    {/* Rate Button - Only show active if delivered, but we let handle logic show toast if clicked on others or maybe hide it? 
-                                        User asked: "Enable rating ONLY for delivered orders". 
-                                        Let's grayscale it if not delivered. 
-                                    */}
-                                    { (order.status === 'delivered' || order.status === 'entregado') ? (
-                                        <button 
-                                            onClick={() => openRatingModal(item)}
-                                            className="text-xs font-bold text-primary hover:bg-primary/10 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5"
-                                        >
-                                            <Star className="w-3.5 h-3.5" /> {t('reviews.rate_btn')}
-                                        </button>
+                                    
+                                    
+                                    { (['delivered', 'entregado', 'completed'].includes(order.status.toLowerCase())) ? (
+                                        hasReview ? (
+                                            <div className="px-3 py-1.5 flex items-center gap-1.5 text-xs font-bold text-muted-foreground bg-muted rounded-lg">
+                                                <CheckCircle className="w-3.5 h-3.5" /> {t('reviews.already_reviewed')}
+                                            </div>
+                                        ) : (
+                                            <button 
+                                                onClick={() => openRatingModal(item)}
+                                                className="text-xs font-bold text-primary hover:bg-primary/10 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5"
+                                            >
+                                                <Star className="w-3.5 h-3.5" /> {t('reviews.rate_btn')}
+                                            </button>
+                                        )
                                     ) : (
                                         <div className="text-xs text-muted-foreground/40 px-3 py-1.5 flex items-center gap-1.5 cursor-not-allowed" title={t('reviews.delivered_only')}>
                                             <Star className="w-3.5 h-3.5" /> {t('reviews.rate_btn')}
                                         </div>
                                     )}
                                 </div>
-                            ))}
+                                )
+                            })}
                         </div>
 
                      </motion.div>
@@ -338,8 +420,17 @@ export default function MyOrdersPage() {
                                 />
                             </div>
 
-                            <button type="submit" className="w-full bg-primary text-primary-foreground font-bold py-3 rounded-xl hover:opacity-90 transition-opacity">
-                                {t('reviews.submit')}
+                            <button 
+                                type="submit" 
+                                disabled={isSubmitting}
+                                className="w-full bg-primary text-primary-foreground font-bold py-3 rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {isSubmitting ? (
+                                    <span className="flex items-center justify-center gap-2">
+                                        <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                                        {t('reviews.submit')}...
+                                    </span>
+                                ) : t('reviews.submit')}
                             </button>
                         </form>
                     </motion.div>
@@ -347,6 +438,50 @@ export default function MyOrdersPage() {
             )}
         </AnimatePresence>
 
+        {/* Interactive Review Prompt Notification */}
+        <AnimatePresence>
+            {reviewPrompt && (
+                <motion.div
+                    initial={{ opacity: 0, y: 50, scale: 0.9 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 50, scale: 0.9 }}
+                    className="fixed bottom-6 right-6 z-50 bg-card border border-border shadow-2xl rounded-xl p-4 w-[320px] backdrop-blur-md"
+                >
+                    <div className="flex gap-4 items-start">
+                         <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-muted flex-shrink-0 border border-border">
+                            {reviewPrompt.products?.image_url && (
+                                <Image src={reviewPrompt.products.image_url} alt="" fill className="object-cover" />
+                            )}
+                        </div>
+                        <div className="flex-1">
+                            <h4 className="font-bold text-sm mb-1">{t('reviews.prompt_title')}</h4>
+                            <p className="text-xs text-muted-foreground line-clamp-2 mb-3">{reviewPrompt.products?.name}</p>
+                            
+                            <div className="flex gap-2">
+                                <button 
+                                    onClick={() => {
+                                        openRatingModal(reviewPrompt)
+                                        setReviewPrompt(null)
+                                    }}
+                                    className="flex-1 bg-primary text-primary-foreground text-xs font-bold py-1.5 rounded-lg hover:opacity-90 transition-opacity"
+                                >
+                                    {t('reviews.rate_now')}
+                                </button>
+                                <button 
+                                    onClick={() => setReviewPrompt(null)}
+                                    className="flex-1 bg-muted hover:bg-muted/80 text-foreground text-xs font-bold py-1.5 rounded-lg transition-colors border border-border"
+                                >
+                                    {t('reviews.maybe_later')}
+                                </button>
+                            </div>
+                        </div>
+                        <button onClick={() => setReviewPrompt(null)} className="text-muted-foreground hover:text-foreground">
+                            <X className="w-4 h-4" />
+                        </button>
+                    </div>
+                </motion.div>
+            )}
+        </AnimatePresence>
       </div>
     </div>
   )

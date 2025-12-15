@@ -51,6 +51,29 @@ export default function DashboardReviewsPage() {
     fetchProducts()
   }, [])
 
+  // Prevent scrolling when modals are open
+  useEffect(() => {
+    if (isAdding || deleteData?.isOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = 'unset'
+    }
+    return () => { document.body.style.overflow = 'unset' }
+  }, [isAdding, deleteData])
+
+  // Handle Escape key
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') {
+            if (isAdding) setIsAdding(false)
+            if (deleteData) setDeleteData(null)
+            if (replyingTo) setReplyingTo(null)
+        }
+    }
+    window.addEventListener('keydown', handleEscape)
+    return () => window.removeEventListener('keydown', handleEscape)
+  }, [isAdding, deleteData, replyingTo])
+
   const handleAddReview = async (e: React.FormEvent) => {
       e.preventDefault()
       if (!newReview.product_id) return addToast(t('dash.reviews.select_error'), 'error')
@@ -119,16 +142,16 @@ export default function DashboardReviewsPage() {
   }
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto">
+    <div className="space-y-6 max-w-5xl mx-auto p-4 md:p-0">
         {/* ... Header & List ... */}
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 md:gap-0 mb-8">
             <div>
                 <h1 className="text-3xl font-extrabold tracking-tight">{t('dash.reviews_title')}</h1>
                 <p className="text-muted-foreground mt-1">{t('dash.reviews_subtitle')}</p>
             </div>
             <button 
                 onClick={() => setIsAdding(true)}
-                className="bg-primary text-primary-foreground px-5 py-2.5 rounded-xl font-bold hover:opacity-90 transition-all shadow-lg shadow-primary/20 flex items-center gap-2 transform active:scale-95"
+                className="w-full md:w-auto bg-primary text-primary-foreground px-5 py-2.5 rounded-xl font-bold hover:opacity-90 transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-2 transform active:scale-95"
             >
                 + {t('dash.reviews.add_admin')}
             </button>
@@ -136,8 +159,8 @@ export default function DashboardReviewsPage() {
 
         <div className="space-y-6">
             {reviews.map((review) => (
-                <div key={review.id} className="bg-card border border-border rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden">
-                    <div className="flex flex-col md:flex-row gap-6">
+                <div key={review.id} className="bg-card border border-border rounded-2xl p-4 md:p-6 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden">
+                    <div className="flex flex-col md:flex-row gap-4 md:gap-6">
                         {/* Product Info */}
                         <div className="flex items-center gap-3 w-full md:w-56 flex-shrink-0 p-3 bg-muted/30 rounded-xl max-h-min self-start border border-border/50">
                             <div className="relative w-14 h-14 rounded-lg overflow-hidden border border-border bg-white shadow-sm flex-shrink-0">
@@ -160,14 +183,14 @@ export default function DashboardReviewsPage() {
                         <div className="flex-1 space-y-6">
                             
                             {/* User Review Bubble */}
-                            <div className="flex gap-4">
+                            <div className="flex gap-3 md:gap-4">
                                 <div className="flex-shrink-0">
-                                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 border border-gray-300 flex items-center justify-center shadow-sm">
-                                        <User className="w-5 h-5 text-gray-500" />
+                                    <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 border border-gray-300 flex items-center justify-center shadow-sm">
+                                        <User className="w-4 h-4 md:w-5 md:h-5 text-gray-500" />
                                     </div>
                                 </div>
                                 <div className="flex-1">
-                                    <div className="flex justify-between items-center mb-1">
+                                    <div className="flex flex-wrap justify-between items-center mb-1 gap-2">
                                         <h3 className="font-bold text-sm text-foreground">{review.username || t('dash.reviews.anon')}</h3>
                                         <div className="flex items-center gap-3">
                                             <span className="text-xs text-muted-foreground">{new Date(review.created_at).toLocaleDateString()}</span>
@@ -180,7 +203,7 @@ export default function DashboardReviewsPage() {
                                             </button>
                                         </div>
                                     </div>
-                                    <div className="bg-muted/40 p-4 rounded-2xl rounded-tl-none border border-border/50 text-sm leading-relaxed text-foreground">
+                                    <div className="bg-muted/40 p-3 md:p-4 rounded-2xl rounded-tl-none border border-border/50 text-sm leading-relaxed text-foreground">
                                         {review.comment}
                                     </div>
                                 </div>
@@ -188,14 +211,14 @@ export default function DashboardReviewsPage() {
 
                             {/* Owner Reply Bubble (ThunderXis) */}
                             {(review.reply || replyingTo === review.id) && (
-                                <div className="flex gap-4 flex-row-reverse">
+                                <div className="flex gap-3 md:gap-4 flex-row-reverse">
                                     <div className="flex-shrink-0">
-                                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-purple-600 border border-primary/20 flex items-center justify-center shadow-md text-white font-bold text-xs">
+                                        <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-gradient-to-br from-primary to-purple-600 border border-primary/20 flex items-center justify-center shadow-md text-white font-bold text-xs">
                                             TX
                                         </div>
                                     </div>
                                     <div className="flex-1 text-right">
-                                        <div className="flex justify-end items-center mb-1 gap-2">
+                                        <div className="flex justify-end items-center mb-1 gap-2 flex-wrap">
                                             {review.replied_at && <span className="text-xs text-muted-foreground">{new Date(review.replied_at).toLocaleDateString()}</span>}
                                             <h3 className="font-bold text-sm text-primary flex items-center gap-1">
                                                 ThunderXis <span className="text-[10px] bg-primary/10 px-1.5 rounded text-primary uppercase tracking-wider">{t('dash.owner')}</span>
@@ -222,13 +245,13 @@ export default function DashboardReviewsPage() {
                                             )}
                                         </div>
                                         
-                                        <div className="grid grid-cols-2 gap-4 text-sm text-muted-foreground mb-4 bg-muted/30 p-3 rounded-lg">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4 text-sm text-muted-foreground mb-4 bg-muted/30 p-3 rounded-lg text-left">
                       <div>
-                        <span className="text-muted-foreground">{t('dash.product')}</span>
+                        <span className="text-muted-foreground text-xs uppercase font-bold">{t('dash.product')}</span>
                         <p className="font-medium text-foreground truncate">{review.productName}</p>
                       </div>
                       <div>
-                        <span className="text-muted-foreground">{t('dash.rating')}</span>
+                        <span className="text-muted-foreground text-xs uppercase font-bold">{t('dash.rating')}</span>
                         <div className="flex text-yellow-500">
                           {[...Array(5)].map((_, i) => (
                             <Star
@@ -264,7 +287,7 @@ export default function DashboardReviewsPage() {
                                                 </div>
                                             </div>
                                         ) : (
-                                            <div className="bg-primary/5 p-4 rounded-2xl rounded-tr-none border border-primary/10 text-sm leading-relaxed text-foreground text-left inline-block max-w-[90%]">
+                                            <div className="bg-primary/5 p-3 md:p-4 rounded-2xl rounded-tr-none border border-primary/10 text-sm leading-relaxed text-foreground text-left inline-block max-w-full md:max-w-[90%]">
                                                 {review.reply}
                                             </div>
                                         )}

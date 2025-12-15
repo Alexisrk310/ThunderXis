@@ -22,8 +22,8 @@ export async function POST(request: Request) {
     }
 
     if (type === 'order_confirmation') {
-      const { email, orderId, total, items, lang } = payload;
-      const result = await sendOrderConfirmationEmail(email, orderId, total, items, lang);
+      const { name, email, orderId, total, items, lang } = payload;
+      const result = await sendOrderConfirmationEmail(name, email, orderId, total, items, lang);
       return NextResponse.json(result);
     }
 

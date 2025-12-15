@@ -68,6 +68,27 @@ export default function ProductsPage() {
     fetchProducts()
   }, [])
 
+  // Prevent scrolling when modal is open
+  useEffect(() => {
+    if (isModalOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = 'unset'
+    }
+    return () => { document.body.style.overflow = 'unset' }
+  }, [isModalOpen])
+
+  // Handle Escape key to close modal
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isModalOpen) {
+        setIsModalOpen(false)
+      }
+    }
+    window.addEventListener('keydown', handleEscape)
+    return () => window.removeEventListener('keydown', handleEscape)
+  }, [isModalOpen])
+
   const fetchProducts = async () => {
     try {
       setLoading(true)
@@ -175,14 +196,14 @@ export default function ProductsPage() {
       resetForm()
     } catch (error: any) {
       console.error('Error saving product:', error)
-      alert('Error saving product')
+      alert(t('dash.error_save_product'))
     } finally {
       setUploading(false)
     }
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm(t('dash.confirm_delete'))) return
+    if (!confirm(t('dash.delete_confirm'))) return
 
     try {
       const { error } = await supabase

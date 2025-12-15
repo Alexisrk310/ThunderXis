@@ -61,7 +61,13 @@ export default function LoginPage() {
         });
 
         if (error) {
-            setError(error.message);
+            if (error.message === 'Invalid login credentials') {
+                setError(t('auth.error.invalid_credentials'));
+            } else if (error.message === 'Email not confirmed') {
+                setError(t('auth.error.email_not_confirmed'));
+            } else {
+                setError(error.message);
+            }
             setLoading(false);
         } else {
             // Force hard redirect to ensure state update
@@ -171,7 +177,7 @@ export default function LoginPage() {
 									<Input
 										id="email"
 										type="email"
-										placeholder={t('auth.placeholder.email')}
+										placeholder={t('auth.email_placeholder')}
 										value={formData.email}
 										onChange={(e) => setFormData({ ...formData, email: e.target.value })}
 										required

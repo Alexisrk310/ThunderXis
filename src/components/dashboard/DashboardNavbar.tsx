@@ -27,49 +27,53 @@ export function DashboardNavbar({ onMenuClick }: DashboardNavbarProps) {
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false)
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
-  const [recentOrders, setRecentOrders] = useState<any[]>([])
+  const [activities, setActivities] = useState<any[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
 
   useEffect(() => {
-    // Fetch initial recent orders
-    const fetchRecentOrders = async () => {
+    // Fetch initial activities
+    const fetchActivities = async () => {
         const { data } = await supabase
-            .from('orders')
+            .from('dashboard_activities')
             .select('*')
             .order('created_at', { ascending: false })
-            .limit(5)
+            .limit(10)
         
         if (data) {
-            setRecentOrders(data)
-            // rudimentary unread check (e.g. status pending) or just new ones since mount
-            // For now, let's just show recent ones.
+            setActivities(data)
+            // Calculare unread if we had a 'read' status logic, but for now just show count of new ones in session
         }
     }
 
     if (user?.role === 'owner') {
-        fetchRecentOrders()
+        fetchActivities()
 
         // Real-time subscription
         const channel = supabase
-            .channel('dashboard-orders')
+            .channel('dashboard-notifications')
             .on(
                 'postgres_changes',
-                { event: 'INSERT', schema: 'public', table: 'orders' },
+                { event: 'INSERT', schema: 'public', table: 'dashboard_activities' },
                 (payload) => {
-                    const newOrder = payload.new
-                    setRecentOrders(prev => [newOrder, ...prev].slice(0, 5))
+                    const newActivity = payload.new
+                    setActivities(prev => [newActivity, ...prev].slice(0, 10))
                     setUnreadCount(prev => prev + 1)
-                    addToast(`${t('dash.new_order')}: ${newOrder.id.slice(0,8)}`, 'success')
+                    
+                    // Toast formatted based on action
+                    // Toast formatted based on action
+                    const actionText = newActivity.action_type === 'ORDER_UPDATE' ? t('dash.activity.order_update') : 
+                                     newActivity.action_type === 'USER_UPDATE' ? t('dash.activity.user_update') : t('dash.activity.new')
+                    
+                    addToast(`${actionText} por ${newActivity.actor_name}`, 'info')
                 }
             )
             .subscribe()
 
         return () => {
-            supabase.removeChannel(channel)
+             supabase.removeChannel(channel)
         }
     }
-  }, [user, t, addToast])
-
+  }, [user, addToast])
   const handleLogout = async () => {
     setIsLogoutModalOpen(false)
     await signOut()
@@ -152,10 +156,11 @@ export function DashboardNavbar({ onMenuClick }: DashboardNavbarProps) {
                     setUnreadCount(0)
                 }}
                 className="relative p-2.5 hover:bg-muted rounded-xl transition-colors group"
+                title={t('dash.notifications')}
               >
-                <Bell className={`w-5 h-5 text-muted-foreground group-hover:text-foreground transition-colors ${unreadCount > 0 ? 'animate-bounce' : ''}`} />
+                <Bell className={`w-5 h-5 text-muted-foreground group-hover:text-foreground transition-colors ${unreadCount > 0 ? 'animate-bounce text-primary' : ''}`} />
                 {unreadCount > 0 && (
-                  <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-background"></span>
+                  <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full ring-2 ring-background"></span>
                 )}
               </button>
 
@@ -168,37 +173,37 @@ export function DashboardNavbar({ onMenuClick }: DashboardNavbarProps) {
                     className="absolute right-0 mt-2 w-80 bg-card border border-border rounded-2xl shadow-xl py-1 z-50 max-h-[400px] overflow-y-auto"
                   >
                     <div className="px-4 py-3 border-b border-border flex justify-between items-center bg-muted/30">
-                      <p className="text-sm font-bold text-foreground">{t('dash.recent_orders')}</p>
-                      <Link href="/dashboard/orders" className="text-xs font-bold text-primary hover:underline">
-                        {t('home.view_all')}
-                      </Link>
+                      <p className="text-sm font-bold text-foreground">{t('dash.activity.recent')}</p>
+                      <button onClick={() => setUnreadCount(0)} className="text-xs text-muted-foreground hover:text-primary">
+                        {t('dash.activity.mark_read')}
+                      </button>
                     </div>
 
-                    {recentOrders.length === 0 ? (
+                    {activities.length === 0 ? (
                       <div className="p-8 text-center text-muted-foreground text-sm font-medium">
-                        {t('dash.no_orders')}
+                        {t('dash.activity.empty')}
                       </div>
                     ) : (
                       <div className="divide-y divide-border/50">
-                        {recentOrders.map(order => (
-                          <div key={order.id} className="p-4 hover:bg-muted/50 transition-colors cursor-pointer group">
-                             <div className="flex justify-between items-start mb-1.5">
-                                <span className="font-bold text-sm text-foreground truncate max-w-[150px]">
-                                    {order.customer_email?.split('@')[0] || t('dash.customer')}
+                        {activities.map(activity => (
+                          <div key={activity.id} className="p-4 hover:bg-muted/50 transition-colors cursor-default">
+                             <div className="flex justify-between items-start mb-1">
+                                <span className="font-bold text-xs text-primary uppercase tracking-wide">
+                                    {activity.action_type?.replace('_', ' ')}
                                 </span>
-                                <span className="text-xs text-muted-foreground tab-nums">
-                                    {new Date(order.created_at).toLocaleDateString()}
+                                <span className="text-[10px] text-muted-foreground">
+                                    {new Date(activity.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                 </span>
                              </div>
-                             <div className="flex justify-between items-center">
-                                <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase
-                                    ${order.status === 'paid' ? 'bg-emerald-500/10 text-emerald-600' : 
-                                      order.status === 'pending' ? 'bg-amber-500/10 text-amber-600' : 'bg-blue-500/10 text-blue-600'}
-                                `}>
-                                    {t(`dash.${order.status}`) || order.status}
-                                </span>
-                                <span className="text-sm font-bold text-foreground">
-                                    {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(order.total_amount)}
+                             <p className="text-sm text-foreground mb-1 leading-snug">
+                                {activity.description}
+                             </p>
+                             <div className="flex items-center gap-1.5 mt-2">
+                                <div className="w-4 h-4 rounded-full bg-gradient-to-br from-purple-500 to-indigo-500 flex items-center justify-center text-[8px] text-white font-bold">
+                                    {activity.actor_name?.charAt(0).toUpperCase()}
+                                </div>
+                                <span className="text-xs text-muted-foreground font-medium">
+                                    {activity.actor_name}
                                 </span>
                              </div>
                           </div>

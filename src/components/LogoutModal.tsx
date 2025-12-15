@@ -14,6 +14,16 @@ interface LogoutModalProps {
 export function LogoutModal({ isOpen, onClose, onConfirm }: LogoutModalProps) {
   const { t } = useLanguage()
 
+  // Prevent scrolling when open
+  React.useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = 'unset'
+    }
+    return () => { document.body.style.overflow = 'unset' }
+  }, [isOpen])
+
   return (
     <AnimatePresence>
       {isOpen && (

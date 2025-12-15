@@ -1,19 +1,20 @@
 'use client'
 
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, AlertCircle } from 'lucide-react'
+import { X, AlertCircle, CheckCircle, HelpCircle } from 'lucide-react'
 import { useRef, useEffect } from 'react'
 
 interface ModalProps {
   isOpen: boolean
   onClose: () => void
-  onConfirm: () => void
+  onConfirm?: () => void
   title: string
   description: string
   confirmText?: string
   cancelText?: string
-  variant?: 'danger' | 'warning' | 'info'
+  variant?: 'danger' | 'warning' | 'info' | 'success'
   isLoading?: boolean
+  children?: React.ReactNode
 }
 
 export function Modal({
@@ -25,7 +26,8 @@ export function Modal({
   confirmText = 'Confirmar',
   cancelText = 'Cancelar',
   variant = 'info',
-  isLoading = false
+  isLoading = false,
+  children
 }: ModalProps) {
   const modalRef = useRef<HTMLDivElement>(null)
 
@@ -48,25 +50,31 @@ export function Modal({
     return () => { document.body.style.overflow = 'unset' }
   }, [isOpen])
 
-  const colors = {
+  const variants = {
     danger: {
-      icon: 'text-red-500 bg-red-500/10',
-      button: 'bg-red-500 hover:bg-red-600 text-white',
-      border: 'border-red-500/20'
+      iconBg: 'bg-red-500/10 text-red-500',
+      button: 'bg-red-600 hover:bg-red-700 text-white shadow-red-500/20',
+      icon: AlertCircle
     },
     warning: {
-      icon: 'text-amber-500 bg-amber-500/10',
-      button: 'bg-amber-500 hover:bg-amber-600 text-white',
-      border: 'border-amber-500/20'
+      iconBg: 'bg-amber-500/10 text-amber-500',
+      button: 'bg-amber-600 hover:bg-amber-700 text-white shadow-amber-500/20',
+      icon: AlertCircle
     },
     info: {
-      icon: 'text-blue-500 bg-blue-500/10',
-      button: 'bg-blue-500 hover:bg-blue-600 text-white',
-      border: 'border-blue-500/20'
+      iconBg: 'bg-blue-500/10 text-blue-500',
+      button: 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-500/20',
+      icon: HelpCircle
+    },
+    success: {
+       iconBg: 'bg-green-500/10 text-green-500',
+       button: 'bg-green-600 hover:bg-green-700 text-white shadow-green-500/20',
+       icon: CheckCircle
     }
   }
 
-  const currentStyle = colors[variant]
+  const currentVariant = variants[variant] || variants.info
+  const Icon = currentVariant.icon
 
   return (
     <AnimatePresence>
@@ -78,56 +86,73 @@ export function Modal({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            className="fixed inset-0 bg-black/40 backdrop-blur-[4px] z-[60] flex items-center justify-center p-4"
           >
             {/* Modal Content */}
             <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
               onClick={(e) => e.stopPropagation()}
               ref={modalRef}
-              className={`w-full max-w-md bg-card border border-border rounded-2xl shadow-2xl overflow-hidden relative ${currentStyle.border}`}
+              className="w-full max-w-lg bg-card/95 backdrop-blur-xl border border-white/10 shadow-2xl rounded-3xl overflow-hidden relative flex flex-col"
             >
-                <div className="p-6">
-                    <div className="flex items-start gap-4">
-                        <div className={`p-3 rounded-full flex-shrink-0 ${currentStyle.icon}`}>
-                            <AlertCircle className="w-6 h-6" />
-                        </div>
-                        <div className="flex-1">
-                            <h3 className="text-lg font-bold text-foreground mb-1">{title}</h3>
-                            <p className="text-sm text-muted-foreground leading-relaxed">{description}</p>
-                        </div>
-                        <button 
-                            onClick={onClose}
-                            className="text-muted-foreground hover:text-foreground transition-colors p-1"
-                        >
-                            <X className="w-5 h-5" />
-                        </button>
+                {/* Close Button */}
+                <div className="absolute top-4 right-4 z-10">
+                    <button 
+                        onClick={onClose}
+                        className="p-2 rounded-full hover:bg-muted/50 text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                        <X className="w-5 h-5" />
+                    </button>
+                </div>
+
+                <div className="p-8 flex flex-col items-center text-center">
+                    {/* Icon */}
+                    <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-6 ${currentVariant.iconBg} ring-8 ring-background`}>
+                        <Icon className="w-8 h-8" strokeWidth={2.5} />
                     </div>
 
-                    <div className="flex items-center justify-end gap-3 mt-8">
-                        <button
-                            onClick={onClose}
-                            disabled={isLoading}
-                            className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
-                        >
-                            {cancelText}
-                        </button>
+                    {/* Content */}
+                    <h3 className="text-2xl font-bold text-foreground mb-2 tracking-tight">
+                        {title}
+                    </h3>
+                    <p className="text-muted-foreground leading-relaxed max-w-sm mx-auto">
+                        {description}
+                    </p>
+
+                    {/* Children (e.g. Inputs) */}
+                    {children && (
+                        <div className="w-full mt-6 text-left bg-muted/30 p-1 rounded-xl">
+                            {children}
+                        </div>
+                    )}
+                </div>
+
+                {/* Footer Buttons */}
+                <div className="p-6 bg-muted/30 border-t border-border/50 flex flex-col-reverse sm:flex-row items-center justify-center gap-3">
+                    <button
+                        onClick={onClose}
+                        disabled={isLoading}
+                        className="w-full sm:w-auto px-6 py-3 text-sm font-semibold text-muted-foreground hover:text-foreground hover:bg-background rounded-xl transition-all border border-transparent hover:border-border"
+                    >
+                        {cancelText}
+                    </button>
+                    
+                    {onConfirm && (
                         <button
                             onClick={onConfirm}
                             disabled={isLoading}
-                            className={`px-6 py-2 text-sm font-bold rounded-lg shadow-lg shadow-black/20 transition-all active:scale-95 flex items-center gap-2 ${currentStyle.button} ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
+                            className={`w-full sm:w-auto px-8 py-3 text-sm font-bold rounded-xl shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2 ${currentVariant.button} ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
                         >
-                            {isLoading ? 'Procesando...' : confirmText}
+                            {isLoading && (
+                                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                            )}
+                            {confirmText}
                         </button>
-                    </div>
+                    )}
                 </div>
-                
-                {/* Loading overlay if needed */}
-                {isLoading && (
-                    <div className="absolute inset-0 bg-background/50 backdrop-blur-[1px] z-10 flex items-center justify-center" />
-                )}
             </motion.div>
           </motion.div>
         </>

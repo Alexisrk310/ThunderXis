@@ -399,48 +399,80 @@ export default function DashboardOverview() {
               {t('dash.no_orders')}
             </div>
           ) : (
-            <table className="w-full">
-              <thead className="bg-muted/30">
-                <tr className="text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  <th className="px-6 py-3">{t('dash.order_id')}</th>
-                  <th className="px-6 py-3">{t('dash.customer')}</th>
-                  <th className="px-6 py-3">{t('dash.date')}</th>
-                  <th className="px-6 py-3">{t('dash.amount')}</th>
-                  <th className="px-6 py-3">{t('dash.status')}</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {stats.recentOrders.map((order) => (
-                  <tr key={order.id} className="hover:bg-muted/20 transition-colors">
-                    <td className="px-6 py-4 text-sm font-mono font-medium text-primary">
-                      #{order.id.slice(0, 8)}
-                    </td>
-                    <td className="px-6 py-4 text-sm font-medium text-foreground">
-                      {order.customer_name || 'N/A'}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-muted-foreground">
-                      {new Date(order.created_at).toLocaleDateString('es-CO', { 
-                        month: 'short', 
-                        day: 'numeric', 
-                        year: 'numeric' 
-                      })}
-                    </td>
-                    <td className="px-6 py-4 text-sm font-bold text-foreground">
-                      {formatCurrency(order.total)}
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-semibold
-                        ${order.status === 'pending' ? 'bg-yellow-100 text-yellow-700' : 
-                          order.status === 'shipped' ? 'bg-blue-100 text-blue-700' :
-                          order.status === 'delivered' ? 'bg-green-100 text-green-700' :
-                          'bg-red-100 text-red-700'}`}>
-                        {order.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <>
+              {/* Desktop Table View */}
+              <div className="hidden md:block">
+                 <table className="w-full">
+                  <thead className="bg-muted/30">
+                    <tr className="text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                      <th className="px-6 py-3">{t('dash.order_id')}</th>
+                      <th className="px-6 py-3">{t('dash.customer')}</th>
+                      <th className="px-6 py-3">{t('dash.date')}</th>
+                      <th className="px-6 py-3">{t('dash.amount')}</th>
+                      <th className="px-6 py-3">{t('dash.status')}</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {stats.recentOrders.map((order) => (
+                      <tr key={order.id} className="hover:bg-muted/20 transition-colors">
+                        <td className="px-6 py-4 text-sm font-mono font-medium text-primary">
+                          #{order.id.slice(0, 8)}
+                        </td>
+                        <td className="px-6 py-4 text-sm font-medium text-foreground">
+                          {order.customer_name || 'N/A'}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-muted-foreground">
+                          {new Date(order.created_at).toLocaleDateString('es-CO', { 
+                            month: 'short', 
+                            day: 'numeric', 
+                            year: 'numeric' 
+                          })}
+                        </td>
+                        <td className="px-6 py-4 text-sm font-bold text-foreground">
+                          {formatCurrency(order.total)}
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-semibold
+                            ${order.status === 'pending' ? 'bg-yellow-100 text-yellow-700' : 
+                              order.status === 'shipped' ? 'bg-blue-100 text-blue-700' :
+                              order.status === 'delivered' ? 'bg-green-100 text-green-700' :
+                              'bg-red-100 text-red-700'}`}>
+                            {t(`dash.${order.status}`)}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Mobile Card View */}
+              <div className="md:hidden flex flex-col divide-y divide-border/50">
+                  {stats.recentOrders.map((order) => (
+                      <div key={order.id} className="p-4 flex flex-col gap-3">
+                          <div className="flex justify-between items-start">
+                               <div className="flex flex-col">
+                                  <span className="text-xs font-mono font-bold text-primary">#{order.id.slice(0, 8)}</span>
+                                  <span className="text-xs text-muted-foreground">
+                                      {new Date(order.created_at).toLocaleDateString('es-CO', { month: 'short', day: 'numeric' })}
+                                  </span>
+                               </div>
+                               <span className={`inline-flex px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase
+                                  ${order.status === 'pending' ? 'bg-yellow-100 text-yellow-700' : 
+                                    order.status === 'shipped' ? 'bg-blue-100 text-blue-700' :
+                                    order.status === 'delivered' ? 'bg-green-100 text-green-700' :
+                                    'bg-red-100 text-red-700'}`}>
+                                  {t(`dash.${order.status}`)}
+                                </span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                              <span className="font-semibold text-sm text-foreground">{order.customer_name || 'N/A'}</span>
+                              <span className="font-black text-foreground">{formatCurrency(order.total)}</span>
+                          </div>
+                      </div>
+                  ))}
+              </div>
+            </>
           )}
         </div>
       </div>

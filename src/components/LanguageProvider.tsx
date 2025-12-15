@@ -298,11 +298,14 @@ const translations: Translations = {
     'dash.confirm_status_title': 'Confirmar Cambio',
     'dash.confirm_status_desc': '¿Estás seguro de cambiar el estado a {status}?',
         'dash.confirm_btn': 'Sí, cambiar estado',
+        'dash.download_pdf': 'Descargar PDF',
         'dash.invoice': 'FACTURA',
         'dash.table_product': 'Producto',
         'dash.table_qty': 'Cant',
         'dash.table_price': 'Precio',
         'dash.table_total': 'Total',
+        'dash.item_one': 'producto',
+        'dash.item_many': 'productos',
         'dash.size': 'Talla',
         'dash.no_sizes_selected': 'No hay tallas seleccionadas',
         'dash.image_abbr': 'IMG',
@@ -315,22 +318,32 @@ const translations: Translations = {
     'dash.reply_placeholder': 'Escribe tu respuesta pública...',
     'dash.reply_save': 'Publicar Respuesta',
     'dash.replied': 'Respondida',
-
-
     // Reviews
-    'reviews.title': 'Reseñas de Clientes',
-    'reviews.write': 'Escribir Reseña',
-    'reviews.rating': 'Calificación',
+    'reviews.already_reviewed': 'Ya calificado',
+    'reviews.rate_btn': 'Calificar Producto',
+    'reviews.modal_title': 'Calificar este Producto',
+    'reviews.share_exp': 'Comparte tu experiencia',
+    'reviews.label': 'Tu reseña',
+    'reviews.placeholder': 'Cuéntanos qué te pareció el producto...',
     'reviews.submit': 'Enviar Reseña',
+    'reviews.success': '¡Gracias por tu reseña!',
+    'reviews.delivered_only': 'Solo puedes calificar productos entregados.',
     'reviews.login_to_write': 'Inicia sesión para escribir una reseña',
-    'reviews.no_reviews': 'Aún no hay reseñas. ¡Sé el primero en opinar!',
-    'reviews.success': '¡Reseña enviada con éxito!',
+    'reviews.no_reviews': 'Aún no hay reseñas para este producto.',
+    'reviews.title': 'Reseñas de Clientes',
+    'reviews.write': 'Escribe una Reseña',
+    'reviews.rating': 'Calificación',
+    'reviews.comment': 'Comentario',
+    'reviews.please_rate': '¡Por favor califica tu producto recibido!',
+    'reviews.prompt_title': '¿Te gustó tu producto?',
+    'reviews.rate_now': 'Sí, calificar',
+    'reviews.maybe_later': 'No, gracias',
+
+
+    // Reviews (merged)
     'reviews.comment_placeholder': 'Comparte tu experiencia con este producto...',
     'reviews.based_on': 'Basado en {0} reseñas',
     'reviews.delete': 'Eliminar',
-    'reviews.already_reviewed': 'Ya calificaste este producto',
-    'reviews.delivered_only': 'Recibe el pedido para calificar',
-    'reviews.rate_btn': 'Calificar Producto',
 
     // Dashboard Reviews
     'dash.reviews_subtitle': 'Gestiona las opiniones y respuestas de los clientes.',
@@ -470,6 +483,9 @@ const translations: Translations = {
     'auth.error.password_length': 'La contraseña debe tener al menos 6 caracteres',
     'auth.error.name_required': 'El nombre es requerido',
     'auth.success.created': '¡Cuenta creada! Por favor revisa tu correo.',
+    'auth.email_placeholder': 'tu@correo.com',
+    'auth.error.invalid_credentials': 'Credenciales de inicio de sesión inválidas',
+    'auth.error.email_not_confirmed': 'Correo electrónico no confirmado',
     // Cart & Checkout (See existing keys above)
     // Discounts
     'discounts.exclusive_offers': 'Ofertas Exclusivas',
@@ -493,10 +509,7 @@ const translations: Translations = {
     'my_orders.status.shipped': 'Enviado',
     'my_orders.status.delivered': 'Entregado',
     'my_orders.status.cancelled': 'Cancelado',
-    'reviews.modal_title': 'Calificar Producto',
-    'reviews.share_exp': '¡Comparte tu experiencia!',
-    'reviews.label': 'Tu Reseña',
-    'reviews.placeholder': '¿Qué te gustó o no te gustó? ¿Cómo fue la calidad?',
+
     // Product Details
     'product.off': 'OFF',
     'cat.collection_fallback': 'Colección',
@@ -518,6 +531,41 @@ const translations: Translations = {
     'address.neighborhood_required': 'El barrio es obligatorio',
     'address.city_required': 'La ciudad es obligatoria',
     'address.phone_required': 'El teléfono es obligatorio',
+
+    // Invoice
+    'invoice.title': 'FACTURA DE VENTA',
+    'invoice.order_num': 'Orden #',
+    'invoice.customer_title': 'CLIENTE',
+    'invoice.date': 'Fecha:',
+    'invoice.status': 'Estado:',
+    'invoice.thanks': 'Gracias por su compra.',
+    'invoice.generated': 'Esta factura electrónica se genera por computador.',
+    
+    // Dashboard Activities
+    'dash.activity.order_update': 'Orden Actualizada',
+    'dash.activity.user_update': 'Usuario Actualizado',
+    'dash.activity.new': 'Nueva Actividad',
+    'dash.activity.recent': 'Actividad Reciente',
+    'dash.activity.mark_read': 'Marcar leídas',
+    'dash.activity.empty': 'No hay actividad reciente',
+    
+    // Dashboard Placeholders
+    'dash.carrier_placeholder': 'Transportadora (Opcional)',
+    'dash.tracking_placeholder': 'Número de Guía (Opcional)',
+    'dash.tracking_label': 'Rastreo',
+    'dash.summary_title': 'Resumen del pedido',
+    'dash.shipping_label': 'Envío',
+    'dash.total_label': 'Total',
+
+    // Dashboard Products & Users (Unique)
+    'dash.variants': 'Variantes',
+    'dash.password_change_confirm': '¿Estás seguro de que quieres cambiar la contraseña para {email}?',
+    'dash.save_password': 'Guardar Contraseña',
+    'dash.change_password': 'Cambiar Contraseña',
+    'dash.password_min_length': 'La contraseña debe tener al menos 6 caracteres',
+    'dash.error_password_change': 'Error al cambiar la contraseña',
+    'dash.new_password_placeholder': 'Nueva contraseña...',
+    'dash.password_updated': 'Contraseña actualizada exitosamente',
 
   },
   en: {
@@ -813,6 +861,7 @@ const translations: Translations = {
     'dash.confirm_status_title': 'Confirm Change',
     'dash.confirm_status_desc': 'Are you sure you want to change status to {status}?',
     'dash.confirm_btn': 'Confirm Change',
+    'dash.download_pdf': 'Download PDF',
     'dash.reviews': 'Reviews',
     'dash.reviews_title': 'Reviews Management',
     'dash.reply': 'Reply',
@@ -971,6 +1020,9 @@ const translations: Translations = {
     'auth.error.password_length': 'Password must be at least 6 characters',
     'auth.error.name_required': 'Name is required',
     'auth.success.created': 'Account created! Please check your email.',
+    'auth.email_placeholder': 'you@email.com',
+    'auth.error.invalid_credentials': 'Invalid login credentials',
+    'auth.error.email_not_confirmed': 'Email not confirmed',
     // Cart & Checkout (See existing keys above)
     // Discounts
     'discounts.exclusive_offers': 'Exclusive Offers',
@@ -1019,6 +1071,48 @@ const translations: Translations = {
     'address.neighborhood_required': 'Neighborhood is required',
     'address.city_required': 'City is required',
     'address.phone_required': 'Phone number is required',
+
+    // Invoice
+    'invoice.title': 'SALES INVOICE',
+    'invoice.order_num': 'Order #',
+    'invoice.customer_title': 'CUSTOMER',
+    'invoice.date': 'Date:',
+    'invoice.status': 'Status:',
+    'invoice.thanks': 'Thank you for your purchase.',
+    'invoice.generated': 'This electronic invoice is computer generated.',
+    
+    // Dashboard Activities
+    'dash.activity.order_update': 'Order Updated',
+    'dash.activity.user_update': 'User Updated',
+    'dash.activity.new': 'New Activity',
+    'dash.activity.recent': 'Recent Activity',
+    'dash.activity.mark_read': 'Mark as read',
+    'dash.activity.empty': 'No recent activity',
+    
+    // Dashboard Placeholders
+    'dash.carrier_placeholder': 'Carrier (Optional)',
+    'dash.tracking_placeholder': 'Tracking Number (Optional)',
+    'dash.tracking_label': 'Tracking',
+    'dash.summary_title': 'Order Summary',
+    'dash.shipping_label': 'Shipping',
+    'dash.total_label': 'Total',
+    'dash.table_product': 'Product',
+    'dash.table_qty': 'Qty',
+    'dash.table_price': 'Price',
+    'dash.table_total': 'Total',
+    'dash.item_one': 'product',
+    'dash.item_many': 'products',
+    'dash.image_abbr': 'IMG',
+
+    // Dashboard Products & Users (Unique)
+    'dash.variants': 'Variants',
+    'dash.password_change_confirm': 'Are you sure you want to change the password for {email}?',
+    'dash.save_password': 'Save Password',
+    'dash.change_password': 'Change Password',
+    'dash.password_min_length': 'Password must be at least 6 characters',
+    'dash.error_password_change': 'Error changing password',
+    'dash.new_password_placeholder': 'New password...',
+    'dash.password_updated': 'Password updated successfully',
 
   },
   fr: {
@@ -1299,6 +1393,7 @@ const translations: Translations = {
     'dash.confirm_status_title': 'Confirmer Changement',
     'dash.confirm_status_desc': 'Êtes-vous sûr de vouloir changer le statut en {status} ?',
     'dash.confirm_btn': 'Confirmer',
+    'dash.download_pdf': 'Télécharger PDF',
     'dash.reviews': 'Avis',
     'dash.reviews_title': 'Gestion des Avis',
     'dash.reply': 'Répondre',
@@ -1372,6 +1467,14 @@ const translations: Translations = {
     'cart.checkout_error_default': 'Une erreur est survenue lors du paiement',
     'cart.error_prefix': 'Erreur : ',
     'cart.shipping_item_name': 'Frais de port',
+    'dash.table_product': 'Produit',
+    'dash.table_qty': 'Qté',
+    'dash.table_price': 'Prix',
+    'dash.table_total': 'Total',
+    'dash.item_one': 'produit',
+    'dash.item_many': 'produits',
+    'dash.size': 'Taille',
+    'dash.image_abbr': 'IMG',
 
 
     // My Orders
@@ -1461,6 +1564,9 @@ const translations: Translations = {
     'auth.error.password_length': 'Le mot de passe doit avoir au moins 6 caractères',
     'auth.error.name_required': 'Nom requis',
     'auth.success.created': 'Compte créé! Veuillez vérifier votre email.',
+    'auth.error.invalid_credentials': 'Identifiants de connexion invalides',
+    'auth.error.email_not_confirmed': 'Email non confirmé',
+    'auth.email_placeholder': 'vous@email.com',
     // Cart & Checkout (See existing keys above)
     // Discounts
     'discounts.exclusive_offers': 'Offres Exclusives',
@@ -1509,6 +1615,41 @@ const translations: Translations = {
     'address.neighborhood_required': 'Le quartier est requis',
     'address.city_required': 'La ville est requise',
     'address.phone_required': 'Le numéro de téléphone est requis',
+
+    // Invoice
+    'invoice.title': 'FACTURE DE VENTE',
+    'invoice.order_num': 'Commande #',
+    'invoice.customer_title': 'CLIENT',
+    'invoice.date': 'Date:',
+    'invoice.status': 'Statut:',
+    'invoice.thanks': 'Merci pour votre achat.',
+    'invoice.generated': 'Cette facture électronique est générée par ordinateur.',
+    
+    // Dashboard Activities
+    'dash.activity.order_update': 'Commande Mise à Jour',
+    'dash.activity.user_update': 'Utilisateur Mis à Jour',
+    'dash.activity.new': 'Nouvelle Activité',
+    'dash.activity.recent': 'Activité Récente',
+    'dash.activity.mark_read': 'Marquer comme lu',
+    'dash.activity.empty': 'Aucune activité récente',
+    
+    // Dashboard Placeholders
+    'dash.carrier_placeholder': 'Transporteur (Optionnel)',
+    'dash.tracking_placeholder': 'Numéro de Suivi (Optionnel)',
+    'dash.tracking_label': 'Suivi',
+    'dash.summary_title': 'Résumé de la commande',
+    'dash.shipping_label': 'Livraison',
+    'dash.total_label': 'Total',
+
+    // Dashboard Products & Users (Unique)
+    'dash.variants': 'Variantes',
+    'dash.password_change_confirm': 'Êtes-vous sûr de vouloir changer le mot de passe pour {email} ?',
+    'dash.save_password': 'Enregistrer le mot de passe',
+    'dash.change_password': 'Changer le mot de passe',
+    'dash.password_min_length': 'Le mot de passe doit contenir au moins 6 caractères',
+    'dash.error_password_change': 'Erreur lors du changement de mot de passe',
+    'dash.new_password_placeholder': 'Nouveau mot de passe...',
+    'dash.password_updated': 'Mot de passe mis à jour avec succès',
 
   },
   pt: {
@@ -1775,6 +1916,7 @@ const translations: Translations = {
     'dash.confirm_status_title': 'Confirmar Alteração',
     'dash.confirm_status_desc': 'Tem certeza que deseja alterar o status para {status}?',
     'dash.confirm_btn': 'Confirmar',
+    'dash.download_pdf': 'Baixar PDF',
     'dash.reviews': 'Avaliações',
     'dash.reviews_title': 'Gestão de Avaliações',
     'dash.reply': 'Responder',
@@ -1938,6 +2080,9 @@ const translations: Translations = {
     'auth.error.password_length': 'A senha deve ter pelo menos 6 caracteres',
     'auth.error.name_required': 'Nome é obrigatório',
     'auth.success.created': 'Conta criada! Por favor verifique seu email.',
+    'auth.error.invalid_credentials': 'Credenciais de login inválidas',
+    'auth.error.email_not_confirmed': 'Email não confirmado',
+    'auth.email_placeholder': 'voce@email.com',
     // Cart & Checkout (See existing keys above)
     // Discounts
     'discounts.exclusive_offers': 'Ofertas Exclusivas',
@@ -1986,6 +2131,49 @@ const translations: Translations = {
     'address.neighborhood_required': 'O bairro é obrigatório',
     'address.city_required': 'A cidade é obrigatória',
     'address.phone_required': 'O telefone é obrigatório',
+
+    // Invoice
+    'invoice.title': 'FATURA DE VENDA',
+    'invoice.order_num': 'Pedido #',
+    'invoice.customer_title': 'CLIENTE',
+    'invoice.date': 'Data:',
+    'invoice.status': 'Status:',
+    'invoice.thanks': 'Obrigado pela sua compra.',
+    'invoice.generated': 'Esta fatura eletrônica é gerada por computador.',
+    
+    // Dashboard Activities
+    'dash.activity.order_update': 'Pedido Atualizado',
+    'dash.activity.user_update': 'Usuário Atualizado',
+    'dash.activity.new': 'Nova Atividade',
+    'dash.activity.recent': 'Atividade Recente',
+    'dash.activity.mark_read': 'Marcar como lido',
+    'dash.activity.empty': 'Nenhuma atividade recente',
+    
+    // Dashboard Placeholders
+    'dash.carrier_placeholder': 'Transportadora (Opcional)',
+    'dash.tracking_placeholder': 'Número de Rastreio (Opcional)',
+    'dash.tracking_label': 'Rastreio',
+    'dash.summary_title': 'Resumo do pedido',
+    'dash.shipping_label': 'Frete',
+    'dash.total_label': 'Total',
+    'dash.table_product': 'Produto',
+    'dash.table_qty': 'Qtd',
+    'dash.table_price': 'Preço',
+    'dash.table_total': 'Total',
+    'dash.item_one': 'produto',
+    'dash.item_many': 'produtos',
+    'dash.size': 'Tamanho',
+    'dash.image_abbr': 'IMG',
+
+    // Dashboard Products & Users (Unique)
+    'dash.variants': 'Variantes',
+    'dash.password_change_confirm': 'Tem certeza que deseja alterar a senha para {email}?',
+    'dash.save_password': 'Salvar Senha',
+    'dash.change_password': 'Alterar Senha',
+    'dash.password_min_length': 'A senha deve ter pelo menos 6 caracteres',
+    'dash.error_password_change': 'Erro ao alterar a senha',
+    'dash.new_password_placeholder': 'Nova senha...',
+    'dash.password_updated': 'Senha atualizada com sucesso',
   }
 };
 

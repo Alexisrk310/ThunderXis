@@ -21,7 +21,7 @@ export default function ReviewForm({ productId, onReviewSubmitted }: ReviewFormP
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (rating === 0) return
+    if (loading || rating === 0) return
 
     setLoading(true)
     try {

@@ -26,10 +26,80 @@ export default function ReviewsList({ productId }: { productId: string }) {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
+      if (session?.user) {
+          checkPermission(session.user.id)
+      } else {
+          setPermissionError('not_logged_in')
+          setCheckLoading(false)
+      }
     })
     
     fetchReviews()
   }, [productId])
+
+  const [canReview, setCanReview] = useState(false)
+  const [checkLoading, setCheckLoading] = useState(true)
+  const [permissionError, setPermissionError] = useState<'not_logged_in' | 'no_purchase' | 'already_reviewed' | null>(null)
+
+  const checkPermission = async (userId: string = session?.user?.id) => {
+      if (!userId) return
+
+      try {
+          // 1. Check if already reviewed
+          const { data: existingReview } = await supabase
+            .from('reviews')
+            .select('id')
+            .eq('user_id', userId)
+            .eq('product_id', productId)
+            .eq('product_id', productId)
+            .maybeSingle()
+
+          if (existingReview) {
+              setCanReview(false)
+              setPermissionError('already_reviewed')
+              setCheckLoading(false)
+              return
+          }
+
+          // 2. Check for delivered purchase
+          // Refactored to query 'orders' first (proven path) and filter in JS to avoid relationship errors
+          const { data: ordersData, error: ordersError } = await supabase
+            .from('orders')
+            .select(`
+                status,
+                order_items:order_items!order_items_order_id_fkey (
+                    product_id
+                )
+            `)
+            .eq('user_id', userId)
+          
+          if (ordersError) {
+              console.error('Error fetching orders for permission check:', ordersError)
+          }
+
+          // Case-insensitive check + Product Match
+          const hasVerifiedPurchase = ordersData?.some((o: any) => {
+              const status = o.status?.toLowerCase() || ''
+              const isDelivered = ['delivered', 'entregado', 'completed'].includes(status)
+              const hasProduct = o.order_items?.some((i: any) => i.product_id === productId)
+              
+              return isDelivered && hasProduct
+          })
+
+          if (hasVerifiedPurchase) {
+              setCanReview(true)
+              setPermissionError(null)
+          } else {
+              setCanReview(false)
+              setPermissionError('no_purchase')
+          }
+
+      } catch (error) {
+          console.error('Error checking permission:', error)
+      } finally {
+          setCheckLoading(false)
+      }
+  }
 
   const fetchReviews = async () => {
     try {
@@ -121,11 +191,20 @@ export default function ReviewsList({ productId }: { productId: string }) {
 
         {/* Review Form (Sidebar on desktop) */}
         <div className="w-full md:w-1/3">
-            {session ? (
-                <ReviewForm productId={productId} onReviewSubmitted={fetchReviews} />
+            {checkLoading ? (
+               <div className="h-40 bg-muted/30 rounded-xl animate-pulse" />
+            ) : canReview ? (
+                <ReviewForm productId={productId} onReviewSubmitted={() => { fetchReviews(); checkPermission(); }} />
             ) : (
                 <div className="bg-muted/50 p-6 rounded-xl border border-border text-center">
-                    <p className="mb-4 text-muted-foreground">{t('reviews.login_to_write')}</p>
+                    <p className="mb-2 text-muted-foreground font-medium">
+                        {permissionError === 'not_logged_in' && t('reviews.login_to_write')}
+                        {permissionError === 'no_purchase' && t('reviews.delivered_only')}
+                        {permissionError === 'already_reviewed' && t('reviews.already_reviewed')}
+                    </p>
+                    {permissionError === 'not_logged_in' && (
+                        <a href="/login" className="text-primary hover:underline text-sm font-bold">{t('auth.login')}</a>
+                    )}
                 </div>
             )}
         </div>

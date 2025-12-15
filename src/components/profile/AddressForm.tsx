@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import { useLanguage } from '@/components/LanguageProvider'
 import { useToast } from '@/components/ui/Toast'
@@ -27,6 +27,13 @@ export default function AddressForm({ onClose, onSuccess, initialData }: Address
     zip_code: initialData?.zip_code || '',
     is_default: initialData?.is_default || false
   })
+
+  // Prevent scrolling when mounted
+  useEffect(() => {
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = 'unset' }
+  }, [])
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

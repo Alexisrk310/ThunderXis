@@ -128,11 +128,12 @@ export default function CartPage() {
             status: 'pending',
             total: finalTotal,
             customer_name: formData.name,
-            customer_email: formData.email, // Save email
-            shipping_address: fullAddress, // Combine address + neighborhood
+            customer_email: formData.email,
+            shipping_address: fullAddress,
             city: formData.city,
             phone: formData.phone,
-            shipping_cost: shippingCost
+            shipping_cost: shippingCost,
+            language: t('lang_code') || 'es' // Save language (requires 'language' column in DB)
         })
 
       if (matchError) {
@@ -145,7 +146,8 @@ export default function CartPage() {
           order_id: orderId,
           product_id: item.id,
           quantity: item.quantity,
-          price_at_time: item.price
+          price_at_time: item.price,
+          size: item.size // Persist size
       }))
 
       console.log('Inserting order items:', JSON.stringify(orderItemsData, null, 2))
