@@ -19,13 +19,28 @@ import { supabase } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import { useLanguage } from '@/components/LanguageProvider';
 import { useAuth } from '@/hooks/useAuth';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { createLoginSchema, LoginValues } from '@/lib/validations/auth';
+import { useMemo } from 'react';
 
 export default function LoginPage() {
     const { t, language, setLanguage } = useLanguage();
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-    const { user } = useAuth(); // Get user from hook
+    const [submitError, setSubmitError] = useState<string | null>(null);
+    const { user } = useAuth(); 
     const router = useRouter();
+
+    const schema = useMemo(() => createLoginSchema(t), [t, language]);
+
+    // React Hook Form
+    const { register, handleSubmit, formState: { errors } } = useForm<LoginValues>({
+        resolver: zodResolver(schema),
+        defaultValues: {
+            email: '',
+            password: '',
+        }
+    });
 
     useEffect(() => {
         if (user) {
@@ -33,40 +48,22 @@ export default function LoginPage() {
         }
     }, [user, router]);
 
-	const [formData, setFormData] = useState({
-		email: '',
-		password: '',
-		rememberMe: false,
-	});
-
-	async function onSubmit(e: React.FormEvent) {
-		e.preventDefault();
+	const onSubmit = async (data: LoginValues) => {
         setLoading(true);
-        setError(null);
-
-        if (!formData.email) {
-            setError(t('auth.error.email_required'));
-            setLoading(false);
-            return;
-        }
-        if (!formData.password) {
-            setError(t('auth.error.password_required'));
-            setLoading(false);
-            return;
-        }
+        setSubmitError(null);
 
 		const { error } = await supabase.auth.signInWithPassword({
-            email: formData.email,
-            password: formData.password,
+            email: data.email,
+            password: data.password,
         });
 
         if (error) {
             if (error.message === 'Invalid login credentials') {
-                setError(t('auth.error.invalid_credentials'));
+                setSubmitError(t('auth.error.invalid_credentials'));
             } else if (error.message === 'Email not confirmed') {
-                setError(t('auth.error.email_not_confirmed'));
+                setSubmitError(t('auth.error.email_not_confirmed'));
             } else {
-                setError(error.message);
+                setSubmitError(error.message);
             }
             setLoading(false);
         } else {
@@ -163,10 +160,10 @@ export default function LoginPage() {
 						</CardHeader>
 
 						<CardContent>
-							<form onSubmit={onSubmit} className="space-y-5">
-								{error && (
+							<form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+								{submitError && (
 									<div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm">
-										{error}
+										{submitError}
 									</div>
 								)}
 
@@ -177,13 +174,14 @@ export default function LoginPage() {
 									<Input
 										id="email"
 										type="email"
-										placeholder={t('auth.email_placeholder')}
-										value={formData.email}
-										onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-										required
-										className="h-11 bg-background/50"
-										disabled={loading}
+                                        placeholder={t('auth.email_placeholder')}
+                                        className="h-11 bg-background/50"
+                                        disabled={loading}
+                                        {...register("email")}
 									/>
+                                    {errors.email && (
+                                        <p className="text-xs text-destructive font-medium">{errors.email.message}</p>
+                                    )}
 								</div>
 
 								<div className="space-y-2">
@@ -195,13 +193,14 @@ export default function LoginPage() {
 									<Input
 										id="password"
 										type="password"
-										placeholder={t('auth.placeholder.password')}
-										value={formData.password}
-										onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-										required
-										className="h-11 bg-background/50"
-										disabled={loading}
+                                        placeholder={t('auth.placeholder.password')}
+                                        className="h-11 bg-background/50"
+                                        disabled={loading}
+                                        {...register("password")}
 									/>
+                                    {errors.password && (
+                                        <p className="text-xs text-destructive font-medium">{errors.password.message}</p>
+                                    )}
 								</div>
 
 								<Button
@@ -222,6 +221,9 @@ export default function LoginPage() {
 									{t('auth.create')}
 								</Link>
 							</p>
+                            <Link href="/shop" className="w-full text-center text-sm font-medium text-muted-foreground hover:text-primary transition-colors flex items-center justify-center gap-2 pt-2">
+                                ← {t('home.view_all') || 'Volver a la tienda'}
+                            </Link>
 						</CardFooter>
 					</Card>
 				</div>
@@ -229,3 +231,4 @@ export default function LoginPage() {
 		</div>
 	);
 }
+

@@ -65,7 +65,54 @@ export async function POST(req: Request) {
            
            if (orderId) {
                console.log(`Webhook: Confirming order ${orderId} for payment ${id}`);
-               await confirmOrder(orderId);
+               const confirmation = await confirmOrder(orderId);
+               
+               if (confirmation.success && confirmation.order) {
+                   const order = confirmation.order;
+                   
+                   // Use Admin Client again since we need access to auth/users or public.profiles
+                   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+                   const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+                   const supabaseAdmin = (await import('@supabase/supabase-js')).createClient(supabaseUrl, supabaseKey);
+                   
+                   let email = order.customer_email;
+                   let name = order.customer_name || 'Cliente';
+                   
+                   // If user_id exists, try to fetch fresh profile data (optional, but good for registered users)
+                   if (order.user_id) {
+                       const { data: profile } = await supabaseAdmin.from('profiles').select('*').eq('id', order.user_id).single();
+                       const { data: { user } } = await supabaseAdmin.auth.admin.getUserById(order.user_id);
+                       
+                       if (user && user.email) {
+                           email = user.email;
+                           name = user.user_metadata?.full_name || user.user_metadata?.name || profile?.full_name || name;
+                       }
+                   }
+
+                   if (email) {
+                        const language = order.language || 'es'; // Default or from order
+                        
+                        // Map items
+                        const emailItems = (order.order_items || []).map((item: any) => ({
+                             name: item.products?.name || 'Producto', 
+                             size: item.size || 'N/A',
+                             quantity: item.quantity,
+                             price_at_time: item.price_at_time || item.price || 0
+                        }));
+
+                        await import('@/lib/email').then(m => m.sendOrderConfirmationEmail(
+                            name,
+                            email,
+                            order.id,
+                            order.total,
+                            emailItems,
+                            language,
+                            undefined, // date (default)
+                            order.shipping_cost || 0 // shippingCost
+                        ));
+                        console.log(`Webhook: Email sent to ${email}`);
+                   }
+               }
            }
        }
     } else {

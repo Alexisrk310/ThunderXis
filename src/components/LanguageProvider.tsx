@@ -307,9 +307,10 @@ const translations: Translations = {
         'dash.item_one': 'producto',
         'dash.item_many': 'productos',
         'dash.size': 'Talla',
+    'dash.included': 'Incluido',
         'dash.no_sizes_selected': 'No hay tallas seleccionadas',
         'dash.image_abbr': 'IMG',
-        'dash.included': 'INCLUIDO',
+
         'dash.included_badge': '* Barrio incluido en la dirección',
     'dash.reviews': 'Reseñas',
     'dash.reviews_title': 'Gestión de Reseñas',
@@ -566,6 +567,39 @@ const translations: Translations = {
     'dash.error_password_change': 'Error al cambiar la contraseña',
     'dash.new_password_placeholder': 'Nueva contraseña...',
     'dash.password_updated': 'Contraseña actualizada exitosamente',
+    
+    // Legal Pages
+    'legal.terms.title': 'Términos de Servicio',
+    'legal.terms.updated': 'Última actualización:',
+    'legal.terms.intro.title': '1. Introducción',
+    'legal.terms.intro.desc': 'Bienvenido a ThunderXis. Al acceder a nuestro sitio web, aceptas estar sujeto a los siguientes términos y condiciones.',
+    'legal.terms.payment.title': '2. Compras y Pagos',
+    'legal.terms.payment.desc': 'Todas las compras se procesan a través de pasarelas seguras (MercadoPago). No almacenamos información de tarjetas de crédito.',
+    'legal.terms.contact.title': '3. Contacto',
+    'legal.terms.contact.desc': 'Si tienes preguntas, contáctanos en support@thunderxis.com.',
+
+    'legal.privacy.title': 'Política de Privacidad',
+    'legal.privacy.effective': 'Fecha de vigencia:',
+    'legal.privacy.intro.desc': 'En ThunderXis, la privacidad de nuestros visitantes es una de nuestras principales prioridades.',
+    'legal.privacy.collect.title': 'Información que Recopilamos',
+    'legal.privacy.collect.desc': 'Recopilamos información que nos proporcionas directamente al realizar una compra o crear una cuenta.',
+    'legal.privacy.use.title': 'Cómo Usamos tu Información',
+    'legal.privacy.use.desc': 'Usamos la información para procesar pedidos, prevenir fraudes y mejorar nuestros servicios.',
+
+    'legal.returns.title': 'Política de Devoluciones',
+    'legal.returns.subtitle': 'Política estándar de 30 días',
+    'legal.returns.guarantee.title': 'Nuestra Garantía',
+    'legal.returns.guarantee.desc': 'Si no estás satisfecho, puedes devolver el artículo dentro de los 30 días posteriores a la entrega.',
+    'legal.returns.conditions.title': 'Condiciones',
+    'legal.returns.conditions.desc': 'Los artículos deben estar sin usar y en su estado original.',
+
+    // Validation Errors
+    'validation.email_invalid': 'Email inválido',
+    'validation.password_required': 'La contraseña es requerida',
+    'validation.name_min': 'El nombre debe tener al menos 2 caracteres',
+    'validation.password_min': 'La contraseña debe tener al menos 6 caracteres',
+
+
 
   },
   en: {
@@ -1103,6 +1137,7 @@ const translations: Translations = {
     'dash.item_one': 'product',
     'dash.item_many': 'products',
     'dash.image_abbr': 'IMG',
+    'dash.included': 'Included',
 
     // Dashboard Products & Users (Unique)
     'dash.variants': 'Variants',
@@ -1113,6 +1148,39 @@ const translations: Translations = {
     'dash.error_password_change': 'Error changing password',
     'dash.new_password_placeholder': 'New password...',
     'dash.password_updated': 'Password updated successfully',
+
+    // Legal Pages
+    'legal.terms.title': 'Terms of Service',
+    'legal.terms.updated': 'Last updated:',
+    'legal.terms.intro.title': '1. Introduction',
+    'legal.terms.intro.desc': 'Welcome to ThunderXis. By accessing our website, you agree to be bound by the following terms and conditions.',
+    'legal.terms.payment.title': '2. Purchases & Payment',
+    'legal.terms.payment.desc': 'All purchases are processed via secure gateways (MercadoPago). We do not store credit card information.',
+    'legal.terms.contact.title': '3. Contact',
+    'legal.terms.contact.desc': 'If you have questions, contact us at support@thunderxis.com.',
+
+    'legal.privacy.title': 'Privacy Policy',
+    'legal.privacy.effective': 'Effective Date:',
+    'legal.privacy.intro.desc': 'At ThunderXis, the privacy of our visitors is one of our main priorities.',
+    'legal.privacy.collect.title': 'Information We Collect',
+    'legal.privacy.collect.desc': 'We collect information you provide directly when making a purchase or creating an account.',
+    'legal.privacy.use.title': 'How We Use Your Information',
+    'legal.privacy.use.desc': 'We use information to process orders, prevent fraud, and improve our services.',
+
+    'legal.returns.title': 'Return Policy',
+    'legal.returns.subtitle': 'Standard 30-Day Policy',
+    'legal.returns.guarantee.title': 'Our Guarantee',
+    'legal.returns.guarantee.desc': 'If you are not satisfied, you may return the item within 30 days of delivery.',
+    'legal.returns.conditions.title': 'Conditions',
+    'legal.returns.conditions.desc': 'Items must be unworn and in their original condition.',
+
+    // Validation Errors
+    'validation.email_invalid': 'Invalid email',
+    'validation.password_required': 'Password is required',
+    'validation.name_min': 'Name must be at least 2 characters',
+    'validation.password_min': 'Password must be at least 6 characters',
+
+
 
   },
   fr: {
@@ -1475,6 +1543,7 @@ const translations: Translations = {
     'dash.item_many': 'produits',
     'dash.size': 'Taille',
     'dash.image_abbr': 'IMG',
+    'dash.included': 'Inclus',
 
 
     // My Orders
@@ -1649,7 +1718,40 @@ const translations: Translations = {
     'dash.password_min_length': 'Le mot de passe doit contenir au moins 6 caractères',
     'dash.error_password_change': 'Erreur lors du changement de mot de passe',
     'dash.new_password_placeholder': 'Nouveau mot de passe...',
-    'dash.password_updated': 'Mot de passe mis à jour avec succès',
+   'dash.password_updated': 'Mot de passe mis à jour avec succès',
+
+    // Legal Pages
+    'legal.terms.title': 'Conditions d\'Utilisation',
+    'legal.terms.updated': 'Dernière mise à jour:',
+    'legal.terms.intro.title': '1. Introduction',
+    'legal.terms.intro.desc': 'Bienvenue chez ThunderXis. En accédant à notre site, vous acceptez d\'être lié par les conditions suivantes.',
+    'legal.terms.payment.title': '2. Achats et Paiements',
+    'legal.terms.payment.desc': 'Tous les achats sont traités via des passerelles sécurisées (MercadoPago). Nous ne stockons pas vos données bancaires.',
+    'legal.terms.contact.title': '3. Contact',
+    'legal.terms.contact.desc': 'Si vous avez des questions, contactez-nous à support@thunderxis.com.',
+
+    'legal.privacy.title': 'Politique de Confidentialité',
+    'legal.privacy.effective': 'Date d\'entrée en vigueur:',
+    'legal.privacy.intro.desc': 'Chez ThunderXis, la confidentialité de nos visiteurs est l\'une de nos principales priorités.',
+    'legal.privacy.collect.title': 'Informations Collectées',
+    'legal.privacy.collect.desc': 'Nous collectons les informations que vous fournissez directement lors d\'un achat ou de la création d\'un compte.',
+    'legal.privacy.use.title': 'Utilisation des Informations',
+    'legal.privacy.use.desc': 'Nous utilisons les informations pour traiter les commandes, prévenir la fraude et améliorer nos services.',
+
+    'legal.returns.title': 'Politique de Retour',
+    'legal.returns.subtitle': 'Politique standard de 30 jours',
+    'legal.returns.guarantee.title': 'Notre Garantie',
+    'legal.returns.guarantee.desc': 'Si vous n\'êtes pas satisfait, vous pouvez retourner l\'article dans les 30 jours suivant la livraison.',
+    'legal.returns.conditions.title': 'Conditions',
+    'legal.returns.conditions.desc': 'Les articles doivent être non portés et dans leur état d\'origine.',
+
+    // Validation Errors
+    'validation.email_invalid': 'Email invalide',
+    'validation.password_required': 'Le mot de passe est requis',
+    'validation.name_min': 'Le nom doit contenir au moins 2 caractères',
+    'validation.password_min': 'Le mot de passe doit contenir au moins 6 caractères',
+
+
 
   },
   pt: {
@@ -2164,6 +2266,7 @@ const translations: Translations = {
     'dash.item_many': 'produtos',
     'dash.size': 'Tamanho',
     'dash.image_abbr': 'IMG',
+    'dash.included': 'Incluído',
 
     // Dashboard Products & Users (Unique)
     'dash.variants': 'Variantes',
@@ -2174,6 +2277,39 @@ const translations: Translations = {
     'dash.error_password_change': 'Erro ao alterar a senha',
     'dash.new_password_placeholder': 'Nova senha...',
     'dash.password_updated': 'Senha atualizada com sucesso',
+
+    // Legal Pages
+    'legal.terms.title': 'Termos de Serviço',
+    'legal.terms.updated': 'Última atualização:',
+    'legal.terms.intro.title': '1. Introdução',
+    'legal.terms.intro.desc': 'Bem-vindo à ThunderXis. Ao acessar nosso site, você concorda em ficar vinculado aos seguintes termos.',
+    'legal.terms.payment.title': '2. Compras e Pagamentos',
+    'legal.terms.payment.desc': 'Todas as compras são processadas via gateways seguros (MercadoPago). Não armazenamos dados de cartão de crédito.',
+    'legal.terms.contact.title': '3. Contato',
+    'legal.terms.contact.desc': 'Se tiver dúvidas, contate-nos em support@thunderxis.com.',
+
+    'legal.privacy.title': 'Política de Privacidade',
+    'legal.privacy.effective': 'Data de vigência:',
+    'legal.privacy.intro.desc': 'Na ThunderXis, a privacidade dos nossos visitantes é uma das nossas principais prioridades.',
+    'legal.privacy.collect.title': 'Informações que Coletamos',
+    'legal.privacy.collect.desc': 'Coletamos informações que você fornece diretamente ao fazer uma compra ou criar uma conta.',
+    'legal.privacy.use.title': 'Como Usamos suas Informações',
+    'legal.privacy.use.desc': 'Usamos as informações para processar pedidos, evitar fraudes e melhorar nossos serviços.',
+
+    'legal.returns.title': 'Política de Devolução',
+    'legal.returns.subtitle': 'Política padrão de 30 dias',
+    'legal.returns.guarantee.title': 'Nossa Garantia',
+    'legal.returns.guarantee.desc': 'Se não estiver satisfeito, você pode devolver o item dentro de 30 dias após a entrega.',
+    'legal.returns.conditions.title': 'Condições',
+    'legal.returns.conditions.desc': 'Os itens devem estar sem uso e em sua condição original.',
+
+     // Validation Errors
+    'validation.email_invalid': 'Email inválido',
+    'validation.password_required': 'A senha é obrigatória',
+    'validation.name_min': 'O nome deve ter pelo menos 2 caracteres',
+    'validation.password_min': 'A senha deve ter pelo menos 6 caracteres',
+
+
   }
 };
 

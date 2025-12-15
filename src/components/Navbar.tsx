@@ -211,7 +211,7 @@ export default function Navbar() {
                <div className="hidden md:flex items-center gap-3">
                    {/* Generic Orders Button for Guests */}
                    <Link 
-                        href="/login" 
+                        href="/my-orders" 
                         className="hidden sm:flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
                         title={t('nav.orders_tooltip')}
                    >
@@ -292,7 +292,10 @@ export default function Navbar() {
                             </button>
                         </>
                     ) : (
-                        <Link href="/login" onClick={() => setIsMobileMenuOpen(false)}>{t('auth.login')}</Link>
+                        <>
+                            <Link href="/my-orders" onClick={() => setIsMobileMenuOpen(false)}>{t('nav.orders')}</Link>
+                            <Link href="/login" onClick={() => setIsMobileMenuOpen(false)}>{t('auth.login')}</Link>
+                        </>
                     )}
                 </div>
               </motion.div>

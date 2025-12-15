@@ -1,4 +1,5 @@
 export const SHIPPING_RATES: Record<string, number> = {
+  'prueba': 0,
   'Bogotá': 10000,
   'Medellín': 15000,
   'Cali': 15000,
@@ -11,6 +12,7 @@ export const SHIPPING_RATES: Record<string, number> = {
   'Santa Marta': 18000,
   // Agrega más ciudades aquí
   'Otras Ciudades': 20000,
+  
 }
 
-export const DEFAULT_SHIPPING_COST = 20000
+export const DEFAULT_SHIPPING_COST = 0

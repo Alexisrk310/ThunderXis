@@ -13,7 +13,7 @@ const client = new MercadoPagoConfig({
 export const createPreference = async (items: { id: string; name: string; quantity: number; price: number }[], orderId: string) => {
   const preference = new Preference(client);
   
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/$/, '') || 'https://auth-project-x5d8.vercel.app';
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/$/, '') || 'https://thunderxis.vercel.app';
 
   const response = await preference.create({
     body: {

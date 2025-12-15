@@ -11,22 +11,7 @@ import { useLanguage } from '@/components/LanguageProvider'
 import { useToast } from '@/components/ui/Toast' // Custom Toast
 import { supabase } from '@/lib/supabase/client'
 import { v4 as uuidv4 } from 'uuid'
-export const SHIPPING_RATES: { [key: string]: number } = {
-  'Bogotá': 8000,
-  'Medellín': 12000,
-  'Cali': 12000,
-  'Barranquilla': 15000,
-  'Cartagena': 15000,
-  'Bucaramanga': 12000,
-  'Pereira': 12000,
-  'Manizales': 12000,
-  'Cúcuta': 15000,
-  'Ibagué': 10000,
-  'Villavicencio': 10000,
-  'Santa Marta': 15000,
-}
-
-export const DEFAULT_SHIPPING_COST = 20000
+import { SHIPPING_RATES, DEFAULT_SHIPPING_COST } from '@/config/shipping'
 
 export default function CartPage() {
   const { items, removeItem, updateQuantity, total } = useCartStore()
@@ -106,14 +91,10 @@ export default function CartPage() {
     setLoading(true)
 
     try {
-      let userId = user?.id
+      let userId = user?.id || null
 
-      if (!userId) {
-         addToast(t('cart.login_required'), 'error')
-         setLoading(false)
-         return
-      }
-
+      // Guest Check: If no user, ensure email is captured (it is required by form validation above)
+      
       const orderId = uuidv4()
       const finalTotal = total() + shippingCost
       const fullAddress = formData.neighborhood 
@@ -124,7 +105,7 @@ export default function CartPage() {
         .from('orders')
         .insert({
             id: orderId,
-            user_id: userId,
+            user_id: userId, // Can be null now
             status: 'pending',
             total: finalTotal,
             customer_name: formData.name,
@@ -133,12 +114,19 @@ export default function CartPage() {
             city: formData.city,
             phone: formData.phone,
             shipping_cost: shippingCost,
-            language: t('lang_code') || 'es' // Save language (requires 'language' column in DB)
+            language: t('lang_code') || 'es'
         })
 
       if (matchError) {
           console.error('Supabase Order Insert Error:', matchError)
           throw new Error(`DB Error: ${matchError.message} (${matchError.code})`)
+      }
+
+      // Save to local storage if guest for "My Orders" visibility before login/linking
+      if (!userId) {
+          const guestOrders = JSON.parse(localStorage.getItem('guest_orders') || '[]')
+          guestOrders.push(orderId)
+          localStorage.setItem('guest_orders', JSON.stringify(guestOrders))
       }
 
       // 1.5 Insert Order Items

@@ -15,7 +15,7 @@ export async function confirmOrder(orderId: string) {
   // 1. Fetch Order
   const { data: order, error: orderError } = await supabaseAdmin
       .from('orders')
-      .select('*, order_items(*)')
+      .select('*, order_items(*, products(name, images, image_url))')
       .eq('id', orderId)
       .single();
 
@@ -57,5 +57,5 @@ export async function confirmOrder(orderId: string) {
        throw updateError;
   }
 
-  return { success: true };
+  return { success: true, order };
 }

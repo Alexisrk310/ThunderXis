@@ -86,8 +86,75 @@ export async function updateOrderStatus(orderId: string, status: string, carrier
     revalidatePath('/dashboard/orders')
     
     return { success: true }
+    
   } catch (error) {
     console.error('Exception in updateOrderStatus:', error)
     return { success: false, error: 'Internal Server Error' }
+  }
+}
+
+export async function fetchGuestOrders(orderIds: string[]) {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+  
+  // Debug: Check if key exists (don't log the actual key for safety, just existence)
+  if (!supabaseKey) {
+      console.error('CRITICAL: SUPABASE_SERVICE_ROLE_KEY is missing')
+      return { orders: [], error: 'Missing Service Role Key' }
+  }
+
+  const supabase = (await import('@supabase/supabase-js')).createClient(supabaseUrl, supabaseKey);
+
+  if (!orderIds || orderIds.length === 0) return { orders: [], error: 'No IDs provided' }
+
+  try {
+      // Step 1: Fetch orders without embedding order_items
+      const { data: orders, error: ordersError } = await supabase
+        .from('orders')
+        .select(`
+            id, created_at, status, total, shipping_address, city, customer_email
+        `)
+        .in('id', orderIds)
+        .order('created_at', { ascending: false })
+
+      if (ordersError) {
+          console.error('Error fetching guest orders:', ordersError)
+          return { orders: [], error: ordersError.message }
+      }
+      
+      if (!orders || orders.length === 0) {
+          return { orders: [], error: null }
+      }
+
+      // Step 2: Fetch order_items for these orders separately
+      const fetchedOrderIds = orders.map(o => o.id)
+      const { data: orderItems, error: itemsError } = await supabase
+        .from('order_items')
+        .select(`
+            id, order_id, product_id, quantity, price_at_time,
+            products ( name, image_url )
+        `)
+        .in('order_id', fetchedOrderIds)
+
+      if (itemsError) {
+            console.error('Error fetching order items:', itemsError)
+            // Even if items fail, we might want to return orders, but generally detailed view needs items.
+            // Let's return error to be safe or empty items.
+            return { orders: [], error: itemsError.message }
+      }
+
+      // Step 3: Attach items to orders in memory
+      const ordersWithItems = orders.map(order => {
+          return {
+              ...order,
+              order_items: orderItems ? orderItems.filter(item => item.order_id === order.id) : []
+          }
+      })
+      
+      return { orders: ordersWithItems, error: null }
+
+  } catch (error: any) {
+      console.error('Exception fetching guest orders:', error)
+      return { orders: [], error: error.message || 'Unknown Exception' }
   }
 }

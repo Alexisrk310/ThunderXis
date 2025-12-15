@@ -93,7 +93,7 @@ export const sendWelcomeEmail = async (email: string, name: string, lang: Suppor
   }
 };
 
-export const sendOrderConfirmationEmail = async (name: string, email: string, orderId: string, total: number, items: any[], lang: SupportedLang = 'es', date: string = new Date().toLocaleDateString()) => {
+export const sendOrderConfirmationEmail = async (name: string, email: string, orderId: string, total: number, items: any[], lang: SupportedLang = 'es', date: string = new Date().toLocaleDateString(), shippingCost: number = 0) => {
   const t = emailTranslations[lang]?.order || emailTranslations['es'].order;
   
   try {
@@ -155,8 +155,19 @@ export const sendOrderConfirmationEmail = async (name: string, email: string, or
                 <h3 style="color: #ffffff; font-size: 18px; font-weight: 700; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid #27272a;">${t.summary_title}</h3>
                 ${itemListHtml}
                 
-                <div style="margin-top: 24px; padding-top: 24px; border-top: 1px solid #27272a; display: flex; justify-content: space-between; align-items: center;">
-                  <span style="font-size: 16px; color: #a1a1aa;">${t.total}</span>
+                <div style="margin-top: 24px; padding-top: 24px; border-top: 1px solid #27272a;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; color: #a1a1aa; font-size: 14px;">
+                        <span>Subtotal</span>
+                        <span>$${(total - (shippingCost || 0)).toLocaleString()}</span>
+                    </div>
+                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; color: #a1a1aa; font-size: 14px;">
+                        <span>Envío</span>
+                        <span>$${(shippingCost || 0).toLocaleString()}</span>
+                    </div>
+                </div>
+
+                <div style="padding-top: 16px; border-top: 1px solid #27272a; display: flex; justify-content: space-between; align-items: center;">
+                  <span style="font-size: 16px; color: #ffffff; font-weight: 700;">${t.total}</span>
                   <span style="font-size: 24px; font-weight: 700; color: #7c3aed;">$${total.toLocaleString()}</span>
                 </div>
               </div>

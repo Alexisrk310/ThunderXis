@@ -9,6 +9,8 @@ import { useLanguage } from '@/components/LanguageProvider'
 import { useToast } from '@/components/ui/Toast' // Added Toast import
 import Link from 'next/link'
 import Image from 'next/image'
+import { fetchGuestOrders } from '@/actions/orders'
+
 
 interface Order {
   id: string
@@ -23,6 +25,7 @@ interface Order {
 export default function MyOrdersPage() {
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
+  const [debugError, setDebugError] = useState<string | null>(null) // New Debug State
   const { user } = useAuth()
   const { t } = useLanguage()
   const { addToast } = useToast()
@@ -45,23 +48,87 @@ export default function MyOrdersPage() {
   })
   
   const [userReviews, setUserReviews] = useState<Set<string>>(new Set())
-
   const [reviewPrompt, setReviewPrompt] = useState<any>(null)
 
   useEffect(() => {
-    if (user) {
-      fetchOrders()
+    const loadData = async () => {
+        setLoading(true)
+        setDebugError(null)
+        try {
+            const localGuestIds = JSON.parse(localStorage.getItem('guest_orders') || '[]')
+            console.log('DEBUG: localGuestIds found:', localGuestIds)
+            
+            // 1. Fetch Guest Orders (Server Action)
+            let fetchedGuestOrders: any[] = []
+            if (localGuestIds.length > 0) {
+                // Now returns object { orders, error }
+                const result = await fetchGuestOrders(localGuestIds)
+                if (result.error) {
+                    console.error('DEBUG: Server Error:', result.error)
+                    setDebugError(result.error)
+                }
+                fetchedGuestOrders = result.orders || []
+                console.log('DEBUG: fetchedGuestOrders result:', fetchedGuestOrders)
+            } else {
+                console.log('DEBUG: No local guest IDs found.')
+            }
+
+            // ... (rest of logic same) ...
+
+            // 2. Fetch User Orders (Supabase Client)
+            let fetchedUserOrders: any[] = []
+            if (user?.id) {
+                const { data, error } = await supabase
+                    .from('orders')
+                    .select(`
+                        id, created_at, status, total, shipping_address, city,
+                        order_items:order_items!order_items_order_id_fkey (
+                            id, product_id, quantity, price_at_time,
+                            products ( name, image_url )
+                        )
+                    `)
+                    .eq('user_id', user.id)
+                    .order('created_at', { ascending: false })
+                
+                if (error) console.error(error)
+                if (data) fetchedUserOrders = data
+
+                // Fetch user reviews
+                const { data: reviews } = await supabase
+                    .from('reviews')
+                    .select('product_id')
+                    .eq('user_id', user.id)
+                
+                if (reviews) {
+                    setUserReviews(new Set(reviews.map(r => r.product_id)))
+                }
+            }
+
+            // 3. Merge & Deduplicate
+            const allOrdersMap = new Map()
+            fetchedGuestOrders.forEach(o => allOrdersMap.set(o.id, o)) // Guest first
+            fetchedUserOrders.forEach(o => allOrdersMap.set(o.id, o))   // User overrides (if linked)
+
+            const mergedOrders = Array.from(allOrdersMap.values())
+            // Sort by date desc
+            mergedOrders.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+
+            setOrders(mergedOrders)
+
+        } catch (error) {
+            console.error('Error loading orders:', error)
+        } finally {
+            setLoading(false)
+        }
     }
+    
+    loadData()
   }, [user])
 
-  // Auto-Prompt for Reviews (One-time per product)
+  // Auto-Prompt for Reviews (Restored)
   useEffect(() => {
       if (loading || orders.length === 0) return
 
-      // Find the first product that:
-      // 1. Is delivered
-      // 2. Is NOT reviewed
-      // 3. Has NOT been prompted before (localStorage)
       let candidateItem: any = null
       
       for (const order of orders) {
@@ -73,7 +140,7 @@ export default function MyOrdersPage() {
                       
                       if (!alreadyPrompted) {
                           candidateItem = item
-                          break // Found one!
+                          break 
                       }
                   }
               }
@@ -82,68 +149,14 @@ export default function MyOrdersPage() {
       }
 
       if (candidateItem) {
-          // Mark as prompted IMMEDIATELY to prevent race conditions
           localStorage.setItem(`review_prompt_${candidateItem.product_id}`, 'true')
-          
-          // Show interactive prompt instead of modal
           setTimeout(() => {
               setReviewPrompt(candidateItem)
           }, 1000)
       }
-
   }, [orders, loading, userReviews])
 
-  // Prevent scrolling when modal is open
-  useEffect(() => {
-    if (ratingModal.isOpen) {
-      document.body.style.overflow = 'hidden'
-    } else {
-      document.body.style.overflow = 'unset'
-    }
-    return () => { document.body.style.overflow = 'unset' }
-  }, [ratingModal.isOpen])
 
-  const fetchOrders = async () => {
-    try {
-      console.log('Fetching orders for user:', user?.id)
-      if (!user?.id) {
-         console.warn('User ID is undefined, skipping fetch')
-         return 
-      }
-
-      const { data, error } = await supabase
-        .from('orders')
-        .select(`
-            id, created_at, status, total, shipping_address, city,
-            order_items:order_items!order_items_order_id_fkey (
-                id, product_id, quantity, price_at_time,
-                products ( name, image_url )
-            )
-        `)
-        .eq('user_id', user?.id)
-        .order('created_at', { ascending: false })
-
-      if (error) throw error
-      if (data) setOrders(data)
-
-      // Fetch user reviews
-      if (user?.id) {
-        const { data: reviews } = await supabase
-            .from('reviews')
-            .select('product_id')
-            .eq('user_id', user.id)
-        
-        if (reviews) {
-            setUserReviews(new Set(reviews.map(r => r.product_id)))
-        }
-      }
-
-    } catch (error: any) {
-      console.error('Error fetching orders:', JSON.stringify(error, null, 2))
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const openRatingModal = async (item: any) => {
       // 1. Check if delivered
@@ -482,7 +495,15 @@ export default function MyOrdersPage() {
                 </motion.div>
             )}
         </AnimatePresence>
+        {/* Debug Section - Temporary */}
+        <div className="mt-12 p-4 bg-black/5 rounded-lg text-xs font-mono text-muted-foreground border border-border">
+            <p className="font-bold mb-2">Debug Info (Take screenshot if empty):</p>
+            <p>Guest IDs in Storage: {typeof window !== 'undefined' ? localStorage.getItem('guest_orders') : 'N/A'}</p>
+            <p>Orders Fetched: {orders.length}</p>
+            <p>User ID: {user?.id || 'Guest'}</p>
+        </div>
       </div>
     </div>
   )
 }
+
