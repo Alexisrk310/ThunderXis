@@ -54,7 +54,7 @@ export default function ProductDetailsClient() {
           addToast(t('products.no_stock'), 'error')
           return
       }
-      addItem({ ...product, size: selectedSize }, quantity)
+      addItem({ ...product, size: selectedSize, quantity })
       addToast(t('products.added_cart'), 'success')
     }
   }
@@ -143,7 +143,7 @@ export default function ProductDetailsClient() {
                 
                 {/* Badges */}
                 <div className="absolute top-4 left-4 flex flex-col gap-2">
-                    {product.isNew && (
+                    {product.is_new && (
                         <span className="px-3 py-1 bg-primary text-primary-foreground text-xs font-bold uppercase tracking-wider rounded-full shadow-lg">
                             {t('products.new')}
                         </span>
@@ -215,7 +215,7 @@ export default function ProductDetailsClient() {
                             </span>
                         )}
                     </div>
-                    {product.stock > 0 ? (
+                    {(product.stock ?? 0) > 0 ? (
                          <span className="px-3 py-1 bg-green-500/10 text-green-500 text-xs font-bold rounded-full border border-green-500/20">
                             {t('products.in_stock')}
                          </span>
@@ -297,7 +297,7 @@ export default function ProductDetailsClient() {
                             className="flex-1 h-14 text-base font-bold rounded-xl shadow-xl shadow-primary/20"
                             size="lg"
                         >
-                            {product.stock > 0 ? t('products.add_cart') : t('products.out_stock')}
+                            {(product.stock ?? 0) > 0 ? t('products.add_cart') : t('products.out_stock')}
                         </Button>
                      </div>
                 </div>

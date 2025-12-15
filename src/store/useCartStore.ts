@@ -15,6 +15,7 @@ export interface Product {
   sizes?: string[]
   colors?: string[]
   stock_by_size?: Record<string, number>
+  compare_at_price?: number
 }
 
 interface CartItem extends Product {
