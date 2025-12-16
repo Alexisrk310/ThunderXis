@@ -100,7 +100,7 @@ export default function ProductDetailsClient() {
           }
       } else {
          navigator.clipboard.writeText(window.location.href)
-         addToast('Enlace copiado al portapapeles', 'success')
+         addToast(t('products.link_copied'), 'success')
       }
   }
 

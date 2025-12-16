@@ -17,18 +17,23 @@ interface ModalProps {
   children?: React.ReactNode
 }
 
+import { useLanguage } from '@/components/LanguageProvider'
+
 export function Modal({
   isOpen,
   onClose,
   onConfirm,
   title,
   description,
-  confirmText = 'Confirmar',
-  cancelText = 'Cancelar',
+  confirmText,
+  cancelText,
   variant = 'info',
   isLoading = false,
   children
 }: ModalProps) {
+  const { t } = useLanguage()
+  const effectiveConfirmText = confirmText || t('common.confirm')
+  const effectiveCancelText = cancelText || t('common.cancel')
   const modalRef = useRef<HTMLDivElement>(null)
 
   // Close on Escape key
@@ -137,7 +142,7 @@ export function Modal({
                         disabled={isLoading}
                         className="w-full sm:w-auto px-6 py-3 text-sm font-semibold text-muted-foreground hover:text-foreground hover:bg-background rounded-xl transition-all border border-transparent hover:border-border"
                     >
-                        {cancelText}
+                        {effectiveCancelText}
                     </button>
                     
                     {onConfirm && (
@@ -149,7 +154,7 @@ export function Modal({
                             {isLoading && (
                                 <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                             )}
-                            {confirmText}
+                            {effectiveConfirmText}
                         </button>
                     )}
                 </div>

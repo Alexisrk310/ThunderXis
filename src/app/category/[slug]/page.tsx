@@ -7,41 +7,51 @@ import { motion } from 'framer-motion'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 
-// This would typically fetch from Supabase based on slug
-const MOCK_PRODUCTS = [
-  {
-    id: '1',
-    name: 'Cyberpunk Hoodie 2077',
-    price: 89.99,
-    image_url: 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?auto=format&fit=crop&q=80&w=800',
-    category: 'Hoodies',
-    description: 'High-quality hooded sweatshirt with cyberpunk aesthetics.',
-    isNew: true
-  },
-  {
-    id: '4',
-    name: 'Void Black Tee',
-    price: 35.00,
-    image_url: 'https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?auto=format&fit=crop&q=80&w=800',
-    category: 'T-Shirts',
-    description: 'Premium cotton t-shirt in void black.',
-    isNew: false
-  },
-]
+import { supabase } from '@/lib/supabase/client'
+import { useLanguage } from '@/components/LanguageProvider'
+
 
 export default function CategoryPage() {
   const params = useParams()
   const category = (params.slug as string) || 'All'
 
+const [products, setProducts] = React.useState<any[]>([])
+  const [loading, setLoading] = React.useState(true)
+  const { t } = useLanguage()
+
+  React.useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setLoading(true)
+        const { data, error } = await supabase
+          .from('products')
+          .select('*')
+          // Basic category filter - adjust if category names in DB differ (e.g. lowercase)
+          .ilike('category', category === 'All' ? '%' : category)
+        
+        if (error) throw error
+        if (data) setProducts(data)
+      } catch (error) {
+        console.error('Error fetching category products:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    if (category) {
+        fetchProducts()
+    }
+  }, [category])
+
   return (
-    <div className="min-h-screen bg-background pb-20 pt-24"> {/* Added pt-24 for navbar spacing */}
+    <div className="min-h-screen bg-background pb-20 pt-24">
        <div className="max-w-7xl mx-auto px-6">
           
           {/* Breadcrumbs */}
           <div className="mb-8 flex items-center gap-2 text-sm text-muted-foreground">
-             <Link href="/" className="hover:text-primary">Home</Link>
+             <Link href="/" className="hover:text-primary">{t('nav.home')}</Link>
              <span>/</span>
-             <Link href="/shop" className="hover:text-primary">Shop</Link>
+             <Link href="/shop" className="hover:text-primary">{t('nav.shop')}</Link>
              <span>/</span>
              <span className="text-foreground capitalize">{category}</span>
           </div>
@@ -52,22 +62,30 @@ export default function CategoryPage() {
              <div className="flex-1">
                  <h1 className="text-4xl font-bold mb-8 capitalize">{category}</h1>
                  
-                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {MOCK_PRODUCTS.map((product, index) => (
-                        <motion.div
-                          key={product.id}
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: index * 0.1 }}
-                        >
-                           <ProductCard product={product} />
-                        </motion.div>
-                    ))}
-                 </div>
+                 {loading ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {[...Array(6)].map((_, i) => (
+                            <div key={i} className="aspect-[3/4] bg-muted/20 animate-pulse rounded-2xl" />
+                        ))}
+                    </div>
+                 ) : (
+                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {products.map((product, index) => (
+                            <motion.div
+                              key={product.id}
+                              initial={{ opacity: 0, y: 20 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ delay: index * 0.1 }}
+                            >
+                               <ProductCard product={product} />
+                            </motion.div>
+                        ))}
+                     </div>
+                 )}
                  
-                 {MOCK_PRODUCTS.length === 0 && (
+                 {!loading && products.length === 0 && (
                     <div className="text-center py-20 text-muted-foreground">
-                        No products found in this category.
+                        {t('shop.no_results')}
                     </div>
                  )}
              </div>

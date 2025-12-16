@@ -11,6 +11,7 @@ import { useLanguage } from '@/components/LanguageProvider'
 import { useToast } from '@/components/ui/Toast' // Custom Toast
 import { supabase } from '@/lib/supabase/client'
 import { v4 as uuidv4 } from 'uuid'
+import { logNewOrder } from '@/actions/orders'
 import { SHIPPING_RATES, DEFAULT_SHIPPING_COST } from '@/config/shipping'
 
 export default function CartPage() {
@@ -31,10 +32,15 @@ export default function CartPage() {
           const res = await validateCoupon(couponInput, total())
           
           if (res.error) {
-              addToast(res.error, 'error')
+              // Check if error is a key that needs params
+                if (res.error === 'coupons.error.min_purchase') {
+                   addToast(t(res.error).replace('{0}', res.minPurchase), 'error')
+                } else {
+                   addToast(t(res.error), 'error')
+                }
           } else if (res.success && res.coupon) {
               applyCoupon(res.coupon)
-              addToast('Coupon applied!', 'success')
+              addToast(t('cart.coupon_applied'), 'success')
               setCouponInput('')
           }
       } catch (error) {
@@ -97,7 +103,7 @@ export default function CartPage() {
       return (
           <div className="min-h-screen bg-background flex flex-col items-center justify-center">
               <Loader2 className="w-12 h-12 animate-spin text-primary" />
-              <p className="mt-4 text-muted-foreground">{t('cart.verifying_prices') || 'Cargando carrito...'}</p>
+              <p className="mt-4 text-muted-foreground">{t('cart.verifying_prices')}</p>
           </div>
       )
   }
@@ -196,6 +202,9 @@ export default function CartPage() {
       console.log('Order items inserted successfully:', insertedItems)
 
       // 2. Create MP Preference linked to Order
+      // Async Log - don't block
+      logNewOrder(orderId, finalTotal, formData.name).catch(err => console.error('Log Error', err))
+
       // Include coupon code if applied
       const couponCode = useCartStore.getState().coupon?.code
 
@@ -413,7 +422,7 @@ export default function CartPage() {
                                     type="text" 
                                     value={couponInput}
                                     onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
-                                    placeholder={t('checkout.coupon_placeholder') || 'Promo Code'}
+                                    placeholder={t('checkout.coupon_placeholder')}
                                     className="flex-1 bg-background border border-border rounded-lg px-3 py-2 text-sm focus:border-primary focus:outline-none uppercase font-mono"
                                 />
                                 <button 
@@ -421,14 +430,14 @@ export default function CartPage() {
                                     disabled={validatingCoupon || !couponInput}
                                     className="bg-muted text-foreground px-4 py-2 rounded-lg text-sm font-medium hover:bg-muted/80 disabled:opacity-50"
                                 >
-                                    {validatingCoupon ? <Loader2 className="w-4 h-4 animate-spin" /> : (t('checkout.apply') || 'Apply')}
+                                    {validatingCoupon ? <Loader2 className="w-4 h-4 animate-spin" /> : t('checkout.apply')}
                                 </button>
                             </div>
                         ) : (
                             <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-3 flex justify-between items-center">
                                 <div>
                                     <span className="text-green-600 font-bold font-mono text-sm">{coupon.code}</span>
-                                    <span className="text-green-600/80 text-xs block">-{formatCurrency(coupon.applied_discount)} applied</span>
+                                    <span className="text-green-600/80 text-xs block">-{formatCurrency(coupon.applied_discount)} {t('checkout.discount_applied')}</span>
                                 </div>
                                 <button 
                                     onClick={removeCoupon}

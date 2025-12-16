@@ -1,7 +1,12 @@
+'use client'
+
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
+import { useLanguage } from '@/components/LanguageProvider'
 
 export default function NotFound() {
+  const { t } = useLanguage()
+  
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-background p-4 relative overflow-hidden">
       {/* Ambient Background */}
@@ -12,22 +17,22 @@ export default function NotFound() {
         <div className="space-y-4">
           <h1 className="text-9xl font-black text-primary opacity-20 select-none">404</h1>
           <h2 className="text-4xl font-bold tracking-tight text-foreground">
-            Lost in the Void
+            {t('404.title')}
           </h2>
           <p className="text-lg text-muted-foreground leading-relaxed">
-            The page you are looking for has drifted into deep space. It might have been removed, renamed, or never existed.
+            {t('404.desc')}
           </p>
         </div>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
           <Link href="/">
             <Button size="lg" className="w-full sm:w-auto font-bold bg-primary hover:bg-primary/90">
-              Return Home
+              {t('404.home')}
             </Button>
           </Link>
           <Link href="/shop">
             <Button size="lg" variant="outline" className="w-full sm:w-auto font-bold border-border/50 hover:bg-accent/10">
-              Explore Store
+              {t('404.explore')}
             </Button>
           </Link>
         </div>

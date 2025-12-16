@@ -5,6 +5,7 @@ import { Star } from 'lucide-react'
 import { supabase } from '@/lib/supabase/client'
 import { useLanguage } from '@/components/LanguageProvider'
 import { useToast } from '@/components/ui/Toast'
+import { logNewReview } from '@/actions/orders'
 
 interface ReviewFormProps {
   productId: string
@@ -54,6 +55,9 @@ export default function ReviewForm({ productId, onReviewSubmitted }: ReviewFormP
       setRating(0)
       setComment('')
       onReviewSubmitted()
+      
+      // Async log
+      logNewReview(productId, rating, username, comment).catch(console.error)
       
     } catch (error) {
       console.error('Error submitting review:', error)

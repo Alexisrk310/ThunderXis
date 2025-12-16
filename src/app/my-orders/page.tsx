@@ -200,7 +200,7 @@ export default function MyOrdersPage() {
       setRatingModal({
           isOpen: true,
           productId: item.product_id,
-          productName: item.products?.name || 'Product',
+          productName: item.products?.name || t('common.product_fallback'),
           productImage: item.products?.image_url || '/placeholder.png',
           rating: 5,
           comment: ''
@@ -234,7 +234,7 @@ export default function MyOrdersPage() {
 
       } catch (error) {
           console.error('Error submitting review:', error)
-          addToast('Error submitting review', 'error')
+          addToast(t('reviews.error_submit'), 'error')
       } finally {
           setIsSubmitting(false)
       }
@@ -336,7 +336,7 @@ export default function MyOrdersPage() {
                                             )}
                                         </div>
                                         <div>
-                                            <p className="text-sm font-bold">{item.products?.name || 'Product'}</p>
+                                            <p className="text-sm font-bold">{item.products?.name || t('common.product_fallback')}</p>
                                             <p className="text-xs text-muted-foreground">
                                                 {t('my_orders.qty')}: {item.quantity} • {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP' }).format(item.price_at_time)}
                                             </p>

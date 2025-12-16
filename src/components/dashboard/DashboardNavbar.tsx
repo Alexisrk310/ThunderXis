@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
-import { Search, Bell, User, ChevronDown, Globe, LogOut, Menu } from 'lucide-react'
+import { Search, Bell, User, ChevronDown, Globe, LogOut, Menu, ShoppingBag, Star, Info, MessageSquare } from 'lucide-react'
 import { useLanguage } from '@/components/LanguageProvider'
 import { useAuth } from '@/hooks/useAuth'
 import { LogoutModal } from '@/components/LogoutModal'
@@ -18,7 +18,7 @@ interface DashboardNavbarProps {
 
 export function DashboardNavbar({ onMenuClick }: DashboardNavbarProps) {
   const { language, setLanguage, t } = useLanguage()
-  const { user, signOut } = useAuth()
+  const { user, role, signOut } = useAuth()
   const pathname = usePathname()
   const { addToast } = useToast()
   
@@ -33,19 +33,27 @@ export function DashboardNavbar({ onMenuClick }: DashboardNavbarProps) {
   useEffect(() => {
     // Fetch initial activities
     const fetchActivities = async () => {
-        const { data } = await supabase
+        console.log('Fetching dashboard activities...')
+        const { data, error } = await supabase
             .from('dashboard_activities')
             .select('*')
             .order('created_at', { ascending: false })
             .limit(10)
         
+        if (error) {
+            console.error('Error fetching activities:', error)
+        }
+        
         if (data) {
+            console.log('Activities fetched:', data.length)
             setActivities(data)
             // Calculare unread if we had a 'read' status logic, but for now just show count of new ones in session
+            const unread = data.filter(a => !a.read).length
+            setUnreadCount(unread)
         }
     }
 
-    if (user?.role === 'owner') {
+    if (role === 'owner') {
         fetchActivities()
 
         // Real-time subscription
@@ -73,7 +81,7 @@ export function DashboardNavbar({ onMenuClick }: DashboardNavbarProps) {
              supabase.removeChannel(channel)
         }
     }
-  }, [user, addToast])
+  }, [user, role, addToast])
   const handleLogout = async () => {
     setIsLogoutModalOpen(false)
     await signOut()
@@ -153,12 +161,13 @@ export function DashboardNavbar({ onMenuClick }: DashboardNavbarProps) {
               <button 
                 onClick={() => {
                     setIsNotificationsOpen(!isNotificationsOpen)
-                    setUnreadCount(0)
+                    // Optional: Reset count on open or on individual read? User preference.
+                    // Let's keep count of UNREAD.
                 }}
                 className="relative p-2.5 hover:bg-muted rounded-xl transition-colors group"
                 title={t('dash.notifications')}
               >
-                <Bell className={`w-5 h-5 text-muted-foreground group-hover:text-foreground transition-colors ${unreadCount > 0 ? 'animate-bounce text-primary' : ''}`} />
+                <Bell className={`w-5 h-5 text-muted-foreground group-hover:text-foreground transition-colors ${unreadCount > 0 ? 'animate-bounce-short text-primary' : ''}`} />
                 {unreadCount > 0 && (
                   <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full ring-2 ring-background"></span>
                 )}
@@ -170,46 +179,130 @@ export function DashboardNavbar({ onMenuClick }: DashboardNavbarProps) {
                     initial={{ opacity: 0, y: -10, scale: 0.95 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                    className="absolute right-0 mt-2 w-80 bg-card border border-border rounded-2xl shadow-xl py-1 z-50 max-h-[400px] overflow-y-auto"
+                    className="absolute right-0 mt-2 w-96 bg-card border border-border rounded-2xl shadow-xl z-50 overflow-hidden flex flex-col max-h-[500px]" // Increased width and max-h
                   >
-                    <div className="px-4 py-3 border-b border-border flex justify-between items-center bg-muted/30">
-                      <p className="text-sm font-bold text-foreground">{t('dash.activity.recent')}</p>
-                      <button onClick={() => setUnreadCount(0)} className="text-xs text-muted-foreground hover:text-primary">
-                        {t('dash.activity.mark_read')}
-                      </button>
+                    <div className="px-5 py-4 border-b border-border flex justify-between items-center bg-muted/40 backdrop-blur-sm sticky top-0 z-10">
+                      <div className="flex items-center gap-2">
+                          <Bell className="w-4 h-4 text-primary fill-primary/20" />
+                          <p className="text-sm font-bold text-foreground">{t('dash.activity.notifications')}</p>
+                          {unreadCount > 0 && <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-bold">{unreadCount}</span>}
+                      </div>
+                      {unreadCount > 0 && (
+                          <button 
+                            onClick={async () => {
+                                // Mark all visible as read logic (naive for now)
+                                setUnreadCount(0)
+                                setActivities(prev => prev.map(a => ({ ...a, read: true })))
+                            }} 
+                            className="text-xs font-medium text-primary hover:text-primary/80 transition-colors"
+                          >
+                            {t('dash.activity.mark_all_read')}
+                          </button>
+                      )}
                     </div>
 
-                    {activities.length === 0 ? (
-                      <div className="p-8 text-center text-muted-foreground text-sm font-medium">
-                        {t('dash.activity.empty')}
-                      </div>
-                    ) : (
-                      <div className="divide-y divide-border/50">
-                        {activities.map(activity => (
-                          <div key={activity.id} className="p-4 hover:bg-muted/50 transition-colors cursor-default">
-                             <div className="flex justify-between items-start mb-1">
-                                <span className="font-bold text-xs text-primary uppercase tracking-wide">
-                                    {activity.action_type?.replace('_', ' ')}
-                                </span>
-                                <span className="text-[10px] text-muted-foreground">
-                                    {new Date(activity.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                </span>
-                             </div>
-                             <p className="text-sm text-foreground mb-1 leading-snug">
-                                {activity.description}
-                             </p>
-                             <div className="flex items-center gap-1.5 mt-2">
-                                <div className="w-4 h-4 rounded-full bg-gradient-to-br from-purple-500 to-indigo-500 flex items-center justify-center text-[8px] text-white font-bold">
-                                    {activity.actor_name?.charAt(0).toUpperCase()}
-                                </div>
-                                <span className="text-xs text-muted-foreground font-medium">
-                                    {activity.actor_name}
-                                </span>
-                             </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                    <div className="overflow-y-auto custom-scrollbar flex-1">
+                        {activities.length === 0 ? (
+                        <div className="p-12 text-center flex flex-col items-center justify-center text-muted-foreground">
+                            <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-3">
+                                <Bell className="w-6 h-6 opacity-20" />
+                            </div>
+                            <p className="text-sm font-medium">{t('dash.activity.empty')}</p>
+                            <p className="text-xs opacity-60 mt-1">{t('dash.activity.empty_desc')}</p>
+                        </div>
+                        ) : (
+                        <div className="divide-y divide-border/30">
+                            {activities.map(activity => {
+                                const isUnread = !activity.read
+                                const type = activity.action_type
+                                
+                                let Icon = Info
+                                let iconColor = 'text-blue-500'
+                                let bgIcon = 'bg-blue-500/10'
+
+                                if (type === 'NEW_ORDER') {
+                                    Icon = ShoppingBag
+                                    iconColor = 'text-emerald-600'
+                                    bgIcon = 'bg-emerald-600/10'
+                                } else if (type === 'NEW_REVIEW') {
+                                    Icon = Star
+                                    iconColor = 'text-amber-500'
+                                    bgIcon = 'bg-amber-500/10'
+                                } else if (type === 'ORDER_UPDATE') {
+                                    Icon = MessageSquare
+                                    iconColor = 'text-blue-500'
+                                    bgIcon = 'bg-blue-500/10'
+                                } else if (type === 'USER_UPDATE') {
+                                    Icon = User
+                                    iconColor = 'text-violet-500'
+                                    bgIcon = 'bg-violet-500/10'
+                                }
+
+                                return (
+                                <Link 
+                                    href={activity.metadata?.order_id ? `/dashboard/orders` : '#'} 
+                                    key={activity.id} 
+                                    onClick={async () => {
+                                        if (isUnread) {
+                                            setActivities(prev => prev.map(a => a.id === activity.id ? { ...a, read: true } : a))
+                                            setUnreadCount(prev => Math.max(0, prev - 1))
+                                            // Async mark read (fire and forget)
+                                            // await markActivityAsRead(activity.id) 
+                                        }
+                                        setIsNotificationsOpen(false)
+                                    }}
+                                    className={`flex gap-4 p-4 hover:bg-muted/40 transition-all duration-200 group ${isUnread ? 'bg-muted/20' : ''}`}
+                                >
+                                    {/* Icon Box */}
+                                    <div className={`mt-1 flex-shrink-0 w-8 h-8 rounded-full ${bgIcon} flex items-center justify-center`}>
+                                        <Icon className={`w-4 h-4 ${iconColor}`} />
+                                    </div>
+
+                                    {/* Content */}
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex justify-between items-start mb-0.5 gap-2">
+                                            <p className={`text-sm font-medium leading-none ${isUnread ? 'text-foreground' : 'text-muted-foreground'}`}>
+                                                {activity.action_type === 'NEW_ORDER' ? t('dash.activity.new_order_title') || 'New Order' :
+                                                 activity.action_type === 'NEW_REVIEW' ? t('dash.activity.new_review_title') || 'New Review' :
+                                                 activity.description
+                                                }
+                                            </p>
+                                            <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+                                                {new Date(activity.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                            </span>
+                                        </div>
+                                        
+                                        <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed mb-2">
+                                            {activity.description} 
+                                        </p>
+
+                                        <div className="flex items-center gap-2">
+                                            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-muted/60 border border-border/50">
+                                                <div className="w-3 h-3 rounded-full bg-gradient-to-tr from-gray-200 to-gray-300 flex items-center justify-center text-[7px] text-gray-700 font-bold">
+                                                    {activity.actor_name?.charAt(0).toUpperCase()}
+                                                </div>
+                                                <span className="text-[10px] font-medium text-muted-foreground">
+                                                    {activity.actor_name}
+                                                </span>
+                                            </div>
+                                            {activity.metadata?.total && (
+                                                <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-500/5 px-2 py-0.5 rounded-full border border-emerald-500/10">
+                                                    ${activity.metadata.total?.toLocaleString()}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                    
+                                    {/* Unread Dot (Subtle) */}
+                                    {isUnread && (
+                                        <div className="mt-2 w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0 self-start" />
+                                    )}
+                                </Link>
+                                )
+                            })}
+                        </div>
+                        )}
+                    </div>
                   </motion.div>
                 )}
               </AnimatePresence>

@@ -9,22 +9,22 @@ export async function validateCouponLogic(supabase: SupabaseClient, code: string
     .single()
 
   if (error || !coupon) {
-    return { error: 'Invalid or inactive coupon code' }
+    return { error: 'coupons.error.invalid' }
   }
 
   // Check expiration
   if (coupon.expiration_date && new Date(coupon.expiration_date) < new Date()) {
-    return { error: 'Coupon has expired' }
+    return { error: 'coupons.error.expired' }
   }
 
   // Check usage limit
   if (coupon.usage_limit && coupon.usage_count >= coupon.usage_limit) {
-    return { error: 'Coupon usage limit reached' }
+    return { error: 'coupons.error.limit' }
   }
 
   // Check min purchase
   if (cartTotal < (coupon.min_purchase_amount || 0)) {
-    return { error: `Minimum purchase of $${coupon.min_purchase_amount || 0} required` }
+    return { error: 'coupons.error.min_purchase', minPurchase: coupon.min_purchase_amount || 0 }
   }
 
   // Calculate discount

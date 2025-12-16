@@ -64,7 +64,7 @@ export default function Footer() {
                   if (res?.error) {
                     alert(res.error) // Replace with toast if available
                   } else {
-                    alert('Subscribed!')
+                    alert(t('footer.subscribed'))
                   }
                }} className="flex gap-2">
                   <input 

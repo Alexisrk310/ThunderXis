@@ -45,7 +45,7 @@ export function InventoryAlerts({ lowStock, outOfStock }: InventoryAlertsProps) 
             {lowStock.map((item) => (
               <div key={item.id} className="flex justify-between items-center text-sm">
                 <span className="text-yellow-200 truncate pr-2">{item.name}</span>
-                <span className="text-yellow-500 font-mono font-bold">{item.stock} left</span>
+                <span className="text-yellow-500 font-mono font-bold">{item.stock} {t('dash.left')}</span>
                 <Link href={`/dashboard/products?search=${item.name}`} className="text-yellow-400 hover:text-yellow-300 text-xs font-semibold flex items-center gap-1">
                    <ArrowRight className="w-3 h-3" />
                 </Link>

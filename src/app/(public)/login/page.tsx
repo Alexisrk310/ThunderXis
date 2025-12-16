@@ -207,7 +207,7 @@ export default function LoginPage() {
 									type="submit"
 									className="w-full h-11 text-base font-semibold bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-all"
 									disabled={loading}>
-									{loading ? 'Cargando...' : t('auth.login')}
+									{loading ? t('loading.text') : t('auth.login')}
 								</Button>
 							</form>
 						</CardContent>
@@ -222,7 +222,7 @@ export default function LoginPage() {
 								</Link>
 							</p>
                             <Link href="/shop" className="w-full text-center text-sm font-medium text-muted-foreground hover:text-primary transition-colors flex items-center justify-center gap-2 pt-2">
-                                ← {t('home.view_all') || 'Volver a la tienda'}
+                                ← {t('home.view_all')}
                             </Link>
 						</CardFooter>
 					</Card>

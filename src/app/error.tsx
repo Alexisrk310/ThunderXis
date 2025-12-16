@@ -4,6 +4,8 @@ import { useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { AlertCircle } from 'lucide-react'
 
+import { useLanguage } from '@/components/LanguageProvider'
+
 export default function Error({
   error,
   reset,
@@ -11,6 +13,8 @@ export default function Error({
   error: Error & { digest?: string }
   reset: () => void
 }) {
+  const { t } = useLanguage()
+
   useEffect(() => {
     // Log the error to an error reporting service (later: Sentry)
     console.error(error)
@@ -29,10 +33,10 @@ export default function Error({
             
             <div className="space-y-2">
                 <h2 className="text-2xl font-bold tracking-tight text-foreground">
-                    System Malfunction
+                    {t('error.title')}
                 </h2>
                 <p className="text-muted-foreground">
-                    Something went wrong within the application core.
+                    {t('error.desc')}
                 </p>
                 {process.env.NODE_ENV === 'development' && (
                     <p className="text-xs font-mono text-destructive/80 bg-destructive/10 p-2 rounded mt-2 break-all">
@@ -47,14 +51,14 @@ export default function Error({
                     size="lg" 
                     className="w-full font-bold bg-foreground text-background hover:bg-foreground/90"
                 >
-                    Reboot System (Try Again)
+                    {t('error.retry')}
                 </Button>
                 <Button 
                     variant="ghost" 
                     onClick={() => window.location.href = '/'}
                     className="w-full text-muted-foreground hover:text-foreground"
                 >
-                    Emergency Evac (Home)
+                    {t('error.home')}
                 </Button>
             </div>
         </div>

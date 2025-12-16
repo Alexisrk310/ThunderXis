@@ -1,6 +1,10 @@
+'use client'
+
 import { Loader2 } from 'lucide-react'
+import { useLanguage } from '@/components/LanguageProvider'
 
 export default function Loading() {
+  const { t } = useLanguage()
   return (
     <div className="min-h-[50vh] w-full flex items-center justify-center">
       <div className="flex flex-col items-center gap-4">
@@ -10,7 +14,7 @@ export default function Loading() {
             <Loader2 className="w-10 h-10 text-primary animate-spin relative z-10" />
         </div>
         <p className="text-sm font-bold text-muted-foreground animate-pulse uppercase tracking-widest">
-            Loading
+            {t('loading.text')}
         </p>
       </div>
     </div>

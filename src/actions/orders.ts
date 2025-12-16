@@ -190,3 +190,47 @@ export async function linkGuestOrders(userId: string, orderIds: string[]) {
         return { success: false, error: error.message }
     }
 }
+// ... existing code ...
+
+export async function logNewOrder(orderId: string, total: number, customerName: string) {
+    try {
+        await logActivity(
+            'NEW_ORDER',
+            `New order placed by ${customerName} ($${total})`,
+            { order_id: orderId, total, customer: customerName }
+        )
+        return { success: true }
+    } catch (error) {
+        console.error('Failed to log new order:', error)
+        return { success: false }
+    }
+}
+export async function markActivityAsRead(activityId: string) {
+    try {
+        const supabase = await createClient()
+        const { error } = await supabase
+            .from('dashboard_activities')
+            .update({ read: true })
+            .eq('id', activityId)
+        
+        if (error) throw error
+        return { success: true }
+    } catch (error) {
+        console.error('Error marking activity read:', error)
+        return { success: false }
+    }
+}
+
+export async function logNewReview(productId: string, rating: number, username: string, comment: string) {
+    try {
+        await logActivity(
+            'NEW_REVIEW',
+            `New ${rating}-star review by ${username}`,
+            { product_id: productId, rating, comment }
+        )
+        return { success: true }
+    } catch (error) {
+        console.error('Failed to log new review:', error)
+        return { success: false }
+    }
+}

@@ -4,6 +4,8 @@ export type ActivityType =
   | 'ORDER_UPDATE' 
   | 'USER_UPDATE' 
   | 'PRODUCT_UPDATE' 
+  | 'NEW_ORDER'
+  | 'NEW_REVIEW'
   | 'SYSTEM'
 
 export async function logActivity(
