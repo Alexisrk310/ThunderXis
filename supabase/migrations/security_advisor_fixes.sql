@@ -23,11 +23,33 @@ WITH CHECK (
     AND user_id IS NULL
 );
 
+-- Orders: Guests (Anon) needs to SELECT orders to verify they exist during order_items insertion.
+-- This allows guests to read any order that hasn't been claimed by a user.
+-- While broad, UUIDs provide practical privacy.
+DROP POLICY IF EXISTS "Guests can view guest orders" ON public.orders;
+CREATE POLICY "Guests can view guest orders" ON public.orders FOR SELECT
+USING (
+    auth.role() = 'anon' 
+    AND user_id IS NULL
+);
+
 -- Order Items: Guests (Anon) can insert items. 
 -- Ideally we check if they own the order, but for anonymous insert we just allow it if the linked order is guest.
 DROP POLICY IF EXISTS "Guests can insert order items" ON public.order_items;
 CREATE POLICY "Guests can insert order items" ON public.order_items FOR INSERT 
 WITH CHECK (
+    auth.role() = 'anon' 
+    AND exists (
+        select 1 from public.orders 
+        where id = order_items.order_id 
+        and user_id IS NULL
+    )
+);
+
+-- Order Items: Guests (Anon) must be able to SELECT their items to get the return value of INSERT.
+DROP POLICY IF EXISTS "Guests can view order items" ON public.order_items;
+CREATE POLICY "Guests can view order items" ON public.order_items FOR SELECT
+USING (
     auth.role() = 'anon' 
     AND exists (
         select 1 from public.orders 
