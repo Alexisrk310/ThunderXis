@@ -24,8 +24,8 @@ interface Order {
 
 export default function MyOrdersPage() {
   const [orders, setOrders] = useState<Order[]>([])
-  const [loading, setLoading] = useState(true)
-  const { user } = useAuth()
+  const [dataLoading, setDataLoading] = useState(true)
+  const { user, loading: authLoading } = useAuth()
   const { t } = useLanguage()
   const { addToast } = useToast()
 
@@ -50,8 +50,10 @@ export default function MyOrdersPage() {
   const [reviewPrompt, setReviewPrompt] = useState<any>(null)
 
   useEffect(() => {
+    if (authLoading) return // Wait for auth to settle
+
     const loadData = async () => {
-        setLoading(true)
+        setDataLoading(true)
         try {
             let localGuestIds = JSON.parse(localStorage.getItem('guest_orders') || '[]')
             
@@ -120,16 +122,16 @@ export default function MyOrdersPage() {
         } catch (error) {
             console.error('Error loading orders:', error)
         } finally {
-            setLoading(false)
+            setDataLoading(false)
         }
     }
     
     loadData()
-  }, [user])
+  }, [user, authLoading])
 
   // Auto-Prompt for Reviews (Restored)
   useEffect(() => {
-      if (loading || orders.length === 0) return
+      if (dataLoading || authLoading || orders.length === 0) return
 
       let candidateItem: any = null
       
@@ -156,7 +158,7 @@ export default function MyOrdersPage() {
               setReviewPrompt(candidateItem)
           }, 1000)
       }
-  }, [orders, loading, userReviews])
+  }, [orders, dataLoading, authLoading, userReviews])
 
 
 
@@ -260,7 +262,7 @@ export default function MyOrdersPage() {
     }
   }
 
-  if (loading) {
+  if (dataLoading || authLoading) {
       return (
           <div className="min-h-screen pt-24 flex items-center justify-center">
               <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-primary"></div>
