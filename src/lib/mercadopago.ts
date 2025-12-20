@@ -10,7 +10,7 @@ const client = new MercadoPagoConfig({
   accessToken: accessToken
 });
 
-export const createPreference = async (items: { id: string; name: string; quantity: number; price: number }[], orderId: string) => {
+export const createPreference = async (items: { id: string; name: string; quantity: number; price: number; description?: string; category_id?: string }[], orderId: string) => {
   const preference = new Preference(client);
   
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/$/, '') || 'https://thunderxis.vercel.app';
@@ -20,6 +20,8 @@ export const createPreference = async (items: { id: string; name: string; quanti
       items: items.map(item => ({
         id: item.id,
         title: item.name,
+        description: item.description,
+        category_id: item.category_id,
         quantity: item.quantity,
         unit_price: Number(item.price),
         currency_id: 'COP' 

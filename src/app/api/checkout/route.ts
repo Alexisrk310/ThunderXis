@@ -39,7 +39,7 @@ export async function POST(req: Request) {
 
         const { data: product, error } = await supabase
             .from('products')
-            .select('stock, name, price, sale_price')
+            .select('stock, name, price, sale_price, description, category')
             .eq('id', item.id)
             .single();
 
@@ -61,6 +61,8 @@ export async function POST(req: Request) {
         validatedItems.push({
             id: item.id,
             name: product.name, // Use DB name
+            description: product.description?.substring(0, 250), // MP Limit usually around 256 chars
+            category_id: product.category, // Pass category
             quantity: Number(item.quantity),
             price: Number(price), // Use DB price
         });
