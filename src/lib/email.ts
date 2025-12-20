@@ -64,7 +64,7 @@ export const sendWelcomeEmail = async (email: string, name: string, lang: Suppor
               <p style="${css.p}">${t.p2}</p>
               
               <div style="text-align: center; margin-top: 40px;">
-                 <a href="https://thunderxis.vercel.app/shop" style="${css.button}">${t.cta}</a>
+                 <a href="https://thunderxis.store/shop" style="${css.button}">${t.cta}</a>
               </div>
             </div>
 
@@ -173,7 +173,7 @@ export const sendOrderConfirmationEmail = async (name: string, email: string, or
               </div>
 
               <div style="text-align: center;">
-                 <a href="https://thunderxis.vercel.app/my-orders" style="${css.button}">${t.track_btn}</a>
+                 <a href="https://thunderxis.store/my-orders" style="${css.button}">${t.track_btn}</a>
               </div>
               
               <p style="${css.p}; margin-top: 32px; font-size: 14px;">
@@ -281,7 +281,7 @@ export const sendOrderStatusEmail = async (
               </div>
               
               <div style="text-align: center;">
-                 <a href="https://thunderxis.vercel.app/my-orders" style="${css.button}">${t.track_btn}</a>
+                 <a href="https://thunderxis.store/my-orders" style="${css.button}">${t.track_btn}</a>
               </div>
 
               <p style="${css.p}; margin-top: 32px; font-size: 14px;">${t.p2}</p>

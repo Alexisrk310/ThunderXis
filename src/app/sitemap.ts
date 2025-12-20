@@ -2,7 +2,7 @@ import { MetadataRoute } from 'next'
 import { createClient } from '@/lib/supabase/server'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://thunderxis.vercel.app'
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://thunderxis.store'
   
   // Static Routes
   const routes = [

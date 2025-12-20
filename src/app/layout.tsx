@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://thunderxis.vercel.app'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://thunderxis.store'),
   title: {
     default: "ThunderXis | Future Fashion",
     template: "%s | ThunderXis"
@@ -25,7 +25,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "ThunderXis | Future Fashion",
     description: "Dystopian Streetwear Store. Explore the future of fashion.",
-    url: process.env.NEXT_PUBLIC_SITE_URL || 'https://thunderxis.vercel.app',
+    url: process.env.NEXT_PUBLIC_SITE_URL || 'https://thunderxis.store',
     siteName: 'ThunderXis',
     locale: 'es_CO',
     type: 'website',
