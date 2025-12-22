@@ -1,135 +1,38 @@
-'use client'
-
-import React, { useState, useEffect, Suspense } from 'react'
-import Carousel from '@/components/Carousel'
-import { Sidebar } from '@/components/Sidebar'
-import ProductCard from '@/features/store/components/ProductCard'
-import { motion } from 'framer-motion'
-import { useLanguage } from '@/components/LanguageProvider'
+import React from 'react'
 import { createClient } from '@supabase/supabase-js'
+import HomeClient from './HomeClient'
 import { Product } from '@/store/useCartStore'
-import Link from 'next/link'
 
-export default function ShopPage() {
-  const { t } = useLanguage()
-  // const { user } = useAuth() // Removed dependency on user
-  const [products, setProducts] = useState<Product[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+// Force dynamic rendering if we want fresh data on every request, 
+// or let it cache if we want speed (revalidate: 60).
+// For "New Arrivals", caching for a minute is efficient and fast.
+export const revalidate = 60; 
 
-  useEffect(() => {
-    const fetchNewArrivals = async () => {
-      try {
-        // Create a dedicated ANONYMOUS client for this request
-        // This ensures the fetch is always "Guest" style, effectively bypassing any invalid user tokens
-        const anonSupabase = createClient(
-            process.env.NEXT_PUBLIC_SUPABASE_URL!,
-            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-            { auth: { persistSession: false } }
-        );
-
-        const { data, error } = await anonSupabase
-          .from('products')
-          .select('*')
-          .eq('is_new', true)
-          .order('created_at', { ascending: false })
-          .limit(8)
-        
-        if (data) {
-           setProducts(data as Product[])
-        }
-      } catch (err: any) {
-        console.error('Error fetching new arrivals:', err)
-        setError(err?.message || 'Unknown fetch error')
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchNewArrivals()
-  }, []) // Empty dependency array = run ONCE on mount, regardless of auth state
-
-  return (
-    <div className="min-h-screen bg-background pb-20">
-      {/* Hero / Carousel */}
-      <Carousel />
-      
-      {/* Shop Section */}
-      <div className="max-w-7xl mx-auto px-6 py-16">
-         <div className="flex flex-col md:flex-row gap-12">
-            
-            {/* Sidebar Filters */}
-            <div className="sticky top-24 h-fit hidden md:block">
-                <Suspense fallback={<div className="w-64 h-96 bg-muted/20 animate-pulse rounded-2xl" />}>
-                    <Sidebar />
-                </Suspense>
-            </div>
-
-            {/* Product Grid */}
-            <div className="flex-1">
-               <div className="flex justify-between items-center mb-8">
-                  <h2 className="text-3xl font-bold flex flex-wrap items-center gap-4 sm:gap-6">
-                    {t('home.new_arrivals')}
-                    <span className="text-xs font-normal text-primary px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 whitespace-nowrap">
-                        {products.length} {t('home.new_drops')}
-                    </span>
-                  </h2>
-                  <Link href="/shop" className="text-sm font-medium hover:text-primary transition-colors flex items-center gap-1">
-                      {t('home.view_all')} &rarr;
-                  </Link>
-               </div>
-
-               {loading ? (
-                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {[...Array(6)].map((_, i) => (
-                            <div key={i} className="flex flex-col gap-4">
-                                <div className="aspect-[3/4] bg-muted/20 animate-pulse rounded-2xl" />
-                                <div className="space-y-2">
-                                    <div className="h-4 bg-muted/20 animate-pulse rounded-full w-3/4" />
-                                    <div className="flex justify-between items-center">
-                                        <div className="h-4 bg-muted/20 animate-pulse rounded-full w-1/3" />
-                                        <div className="h-8 w-8 bg-muted/20 animate-pulse rounded-full" />
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                   </div>
-               ) : error ? (
-                   <div className="text-center py-20 bg-red-500/5 rounded-3xl border border-red-500/20 backdrop-blur-sm p-6">
-                       <p className="text-lg text-red-500 mb-2 font-semibold">Error cargando productos</p>
-                       <p className="text-sm text-muted-foreground mb-4">{error}</p>
-                       <button 
-                           onClick={() => window.location.reload()}
-                           className="px-4 py-2 bg-primary text-white rounded-full text-sm font-bold hover:opacity-90 transition-opacity"
-                       >
-                           Recargar Página
-                       </button>
-                   </div>
-               ) : products.length === 0 ? (
-                   <div className="text-center py-20 bg-muted/5 rounded-3xl border border-white/5 backdrop-blur-sm">
-                        <p className="text-lg text-muted-foreground mb-4">{t('home.no_drops')}</p>
-                        <Link href="/shop" className="text-primary hover:underline">
-                           {t('home.browse_collection')}
-                        </Link>
-                   </div>
-               ) : (
-                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {products.map((product, index) => (
-                        <motion.div
-                          key={product.id}
-                          initial={{ opacity: 0, y: 20 }}
-                          whileInView={{ opacity: 1, y: 0 }}
-                          viewport={{ once: true }}
-                          transition={{ delay: index * 0.1 }}
-                        >
-                           <ProductCard product={product} />
-                        </motion.div>
-                      ))}
-                   </div>
-               )}
-            </div>
-         </div>
-      </div>
-    </div>
+export default async function HomePage() {
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { auth: { persistSession: false } }
   )
+
+  let products: Product[] = []
+  
+  try {
+    const { data } = await supabase
+      .from('products')
+      .select('*')
+      .eq('is_new', true)
+      .order('created_at', { ascending: false })
+      .limit(8)
+    
+    if (data) {
+      products = data as Product[]
+    }
+  } catch (error) {
+    console.error('SSR Error fetching new arrivals:', error)
+    // We swallow the error here to allow the page to render with empty products
+    // The UI handles empty state gracefully
+  }
+
+  return <HomeClient products={products} />
 }
