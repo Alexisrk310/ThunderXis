@@ -14,6 +14,7 @@ export default function ShopPage() {
   const { t } = useLanguage()
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     const fetchNewArrivals = async () => {
@@ -34,6 +35,9 @@ export default function ShopPage() {
         const errorMessage = err?.message || 'Unknown fetch error'
         if (errorMessage.includes('JWT') || err?.code === 'PGRST301') {
             console.warn('Authentication token issue detected on home page')
+            setError('Sesión caducada. Por favor recarga o vuelve a iniciar sesión.')
+        } else {
+            setError(errorMessage)
         }
       } finally {
         setLoading(false)
@@ -87,6 +91,17 @@ export default function ShopPage() {
                                 </div>
                             </div>
                         ))}
+                   </div>
+               ) : error ? (
+                   <div className="text-center py-20 bg-red-500/5 rounded-3xl border border-red-500/20 backdrop-blur-sm p-6">
+                       <p className="text-lg text-red-500 mb-2 font-semibold">Error cargando productos</p>
+                       <p className="text-sm text-muted-foreground mb-4">{error}</p>
+                       <button 
+                           onClick={() => window.location.reload()}
+                           className="px-4 py-2 bg-primary text-white rounded-full text-sm font-bold hover:opacity-90 transition-opacity"
+                       >
+                           Recargar Página
+                       </button>
                    </div>
                ) : products.length === 0 ? (
                    <div className="text-center py-20 bg-muted/5 rounded-3xl border border-white/5 backdrop-blur-sm">
