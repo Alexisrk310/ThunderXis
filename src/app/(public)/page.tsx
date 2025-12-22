@@ -6,14 +6,13 @@ import { Sidebar } from '@/components/Sidebar'
 import ProductCard from '@/features/store/components/ProductCard'
 import { motion } from 'framer-motion'
 import { useLanguage } from '@/components/LanguageProvider'
-import { useAuth } from '@/hooks/useAuth'
-import { supabase } from '@/lib/supabase/client'
-import { Product } from '@/store/useCartStore'
-import Link from 'next/link'
+import { createClient } from '@supabase/supabase-js'
+
+// ... existing imports
 
 export default function ShopPage() {
   const { t } = useLanguage()
-  const { user } = useAuth()
+  // const { user } = useAuth() // Removed dependency on user
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -21,7 +20,15 @@ export default function ShopPage() {
   useEffect(() => {
     const fetchNewArrivals = async () => {
       try {
-        const { data, error } = await supabase
+        // Create a dedicated ANONYMOUS client for this request
+        // This ensures the fetch is always "Guest" style, effectively bypassing any invalid user tokens
+        const anonSupabase = createClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+            { auth: { persistSession: false } }
+        );
+
+        const { data, error } = await anonSupabase
           .from('products')
           .select('*')
           .eq('is_new', true)
@@ -33,21 +40,14 @@ export default function ShopPage() {
         }
       } catch (err: any) {
         console.error('Error fetching new arrivals:', err)
-        // Check specifically for Auth errors (JWT expired, etc)
-        const errorMessage = err?.message || 'Unknown fetch error'
-        if (errorMessage.includes('JWT') || err?.code === 'PGRST301') {
-            console.warn('Authentication token issue detected on home page')
-            setError('Sesión caducada. Por favor recarga o vuelve a iniciar sesión.')
-        } else {
-            setError(errorMessage)
-        }
+        setError(err?.message || 'Unknown fetch error')
       } finally {
         setLoading(false)
       }
     }
 
     fetchNewArrivals()
-  }, [user])
+  }, []) // Empty dependency array = run ONCE on mount, regardless of auth state
 
   return (
     <div className="min-h-screen bg-background pb-20">
