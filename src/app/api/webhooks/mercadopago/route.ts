@@ -56,7 +56,7 @@ export async function POST(req: Request) {
     }
 
     // Process Payments
-    if ((topic === 'payment' || topic === 'payment') && id) {
+    if (topic === 'payment' && id) {
        console.log(`Webhook: Processing payment ${id}`);
        console.log(`Webhook: Access Token exists? ${!!accessToken}, Length: ${accessToken.length}`);
        
