@@ -7,8 +7,8 @@ import ProductCard from '@/features/store/components/ProductCard'
 import { motion } from 'framer-motion'
 import { useLanguage } from '@/components/LanguageProvider'
 import { createClient } from '@supabase/supabase-js'
-
-// ... existing imports
+import { Product } from '@/store/useCartStore'
+import Link from 'next/link'
 
 export default function ShopPage() {
   const { t } = useLanguage()

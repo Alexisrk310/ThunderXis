@@ -1,7 +1,8 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { supabase } from '@/lib/supabase/client'
+import { createClient } from '@supabase/supabase-js'
+// import { supabase } from '@/lib/supabase/client'
 import { Product } from '@/store/useCartStore'
 import ProductCard from '@/features/store/components/ProductCard'
 import { useLanguage } from '@/components/LanguageProvider'
@@ -16,7 +17,14 @@ export default function DiscountsPage() {
   useEffect(() => {
     const fetchDiscountedProducts = async () => {
       try {
-        const { data, error } = await supabase
+        // Use anonymous client
+        const anonSupabase = createClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+            { auth: { persistSession: false } }
+        )
+
+        const { data, error } = await anonSupabase
           .from('products')
           .select('*')
           .not('sale_price', 'is', null)

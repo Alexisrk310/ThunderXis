@@ -9,6 +9,7 @@ import { ProductSkeleton } from '@/features/store/components/ProductSkeleton'
 import { useLanguage } from '@/components/LanguageProvider'
 import { Filter, X } from 'lucide-react'
 
+import { createClient } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase/client'
 import { Product } from '@/store/useCartStore'
 
@@ -37,7 +38,15 @@ function ShopContent() {
   const fetchProducts = async () => {
     try {
       setLoading(true)
-      let query = supabase.from('products').select('*')
+      
+      // Use anonymous client to avoid Auth/Token issues for public product data
+      const anonSupabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        { auth: { persistSession: false } }
+      )
+      
+      let query = anonSupabase.from('products').select('*')
 
       if (categoryFilter) {
         query = query.ilike('category', categoryFilter)
