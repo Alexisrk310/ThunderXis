@@ -3,7 +3,7 @@
 import React, { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, ShoppingBag, Truck, Users, Settings, LogOut, Home, MessageSquare, Shield, Store, X, Tag } from 'lucide-react'
+import { LayoutDashboard, ShoppingBag, Truck, Users, Settings, LogOut, Home, MessageSquare, Shield, Store, X, Tag, Mail } from 'lucide-react'
 import { useLanguage } from '@/components/LanguageProvider'
 import { useAuth } from '@/hooks/useAuth'
 import { LogoutModal } from '@/components/LogoutModal'
@@ -26,6 +26,7 @@ export function DashboardSidebar({ isOpen, onClose }: DashboardSidebarProps) {
     { href: '/dashboard/reviews', label: t('dash.reviews'), icon: MessageSquare },
     { href: '/dashboard/users', label: t('dash.users'), icon: Users },
     { href: '/dashboard/coupons', label: t('dash.coupons') || 'Coupons', icon: Tag },
+    { href: '/dashboard/emails', label: t('nav.marketing'), icon: Mail },
     { href: '/dashboard/security', label: t('profile.security'), icon: Shield },
   ]
 
@@ -71,6 +72,7 @@ export function DashboardSidebar({ isOpen, onClose }: DashboardSidebarProps) {
                   <Link 
                      key={link.href} 
                      href={link.href}
+                     onClick={onClose}
                      className={`group flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all font-medium text-sm relative
                         ${isActive 
                           ? 'bg-primary/10 text-primary border-l-2 border-primary' 
@@ -91,7 +93,7 @@ export function DashboardSidebar({ isOpen, onClose }: DashboardSidebarProps) {
 
          {/* Footer */}
          <div className="mt-auto pt-6 border-t border-border/50 space-y-1">
-             <Link href="/" className="flex items-center gap-3 text-muted-foreground hover:text-foreground transition-colors p-2 rounded-lg hover:bg-muted/50">
+             <Link href="/" onClick={onClose} className="flex items-center gap-3 text-muted-foreground hover:text-foreground transition-colors p-2 rounded-lg hover:bg-muted/50">
                 <Store className="w-5 h-5" />
                 <span className="font-medium">{t('nav.go_to_store')}</span>
              </Link>

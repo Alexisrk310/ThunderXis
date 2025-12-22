@@ -45,6 +45,8 @@ export async function createCoupon(formData: FormData) {
   const usageLimit = parseInt(formData.get('usageLimit')?.toString() || '0')
   const minPurchase = parseFloat(formData.get('minPurchase')?.toString() || '0')
 
+  const maxDiscountAmount = parseFloat(formData.get('maxDiscountAmount')?.toString() || '0')
+
   if (!code || !discountType || !discountValue) {
     return { error: 'Missing required fields' }
   }
@@ -58,6 +60,7 @@ export async function createCoupon(formData: FormData) {
       expiration_date: expirationDate || null,
       usage_limit: usageLimit > 0 ? usageLimit : null,
       min_purchase_amount: minPurchase,
+      max_discount_amount: maxDiscountAmount > 0 ? maxDiscountAmount : null,
       is_active: true
     })
 
@@ -107,4 +110,44 @@ export async function toggleCouponStatus(id: string, currentStatus: boolean) {
     revalidatePath('/dashboard/coupons')
     return { success: true }
   }
+
+export async function updateCoupon(id: string, formData: FormData) {
+  const isOwner = await checkOwner()
+  if (!isOwner) return { error: 'Unauthorized' }
+
+  const supabaseAdmin = getAdminSupabase()
+
+  const code = formData.get('code')?.toString().toUpperCase()
+  const discountType = formData.get('discountType')?.toString()
+  const discountValue = parseFloat(formData.get('discountValue')?.toString() || '0')
+  const expirationDate = formData.get('expirationDate')?.toString()
+  const usageLimit = parseInt(formData.get('usageLimit')?.toString() || '0')
+  const minPurchase = parseFloat(formData.get('minPurchase')?.toString() || '0')
+  const maxDiscountAmount = parseFloat(formData.get('maxDiscountAmount')?.toString() || '0')
+
+  if (!code || !discountType || !discountValue) {
+    return { error: 'Missing required fields' }
+  }
+
+  const { error } = await supabaseAdmin
+    .from('coupons')
+    .update({
+      code,
+      discount_type: discountType,
+      discount_value: discountValue,
+      expiration_date: expirationDate || null,
+      usage_limit: usageLimit > 0 ? usageLimit : null,
+      min_purchase_amount: minPurchase,
+      max_discount_amount: maxDiscountAmount > 0 ? maxDiscountAmount : null,
+    })
+    .eq('id', id)
+
+  if (error) {
+    console.error('Error updating coupon:', error)
+    return { error: error.message || 'Failed to update coupon' }
+  }
+
+  revalidatePath('/dashboard/coupons')
+  return { success: true }
+}
 

@@ -3,7 +3,7 @@ import { emailTranslations } from './email-translations';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
+const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'noreply@thunderxis.store';
 
 type SupportedLang = 'es' | 'en' | 'fr' | 'pt';
 
@@ -90,6 +90,98 @@ export const sendWelcomeEmail = async (email: string, name: string, lang: Suppor
   } catch (error) {
     console.error('Exception sending welcome email:', error);
     return { success: false, error };
+  }
+};
+
+export const sendReengagementEmail = async (email: string, name: string, lang: SupportedLang = 'es') => {
+  const t = emailTranslations[lang]?.reengagement || emailTranslations['es'].reengagement;
+
+  try {
+    const { data, error } = await resend.emails.send({
+      from: `ThunderXis <${FROM_EMAIL}>`,
+      to: [email],
+      subject: t.subject,
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <body style="${css.body}">
+          <div style="${css.container}">
+             <div style="${css.header}">
+               <h1 style="${css.brand}">THUNDERXIS</h1>
+            </div>
+            <div style="${css.content}">
+                <h2 style="${css.h1}">${t.title.replace('{name}', name)}</h2>
+                <p style="${css.p}">${t.p1}</p>
+                <p style="${css.p}">${t.p2}</p>
+                
+                <div style="text-align: center; margin: 40px 0;">
+                    <a href="https://thunderxis.store/shop" style="${css.button}">${t.cta}</a>
+                </div>
+                
+                <p style="${css.p}">${t.p3}</p>
+            </div>
+             <div style="${css.footer}">
+               <p style="color: #52525b; font-size: 12px;">© ${new Date().getFullYear()} ThunderXis. Be Brave.</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `
+    });
+
+    if (error) {
+        console.error('Error sending reengagement email:', error);
+        return { success: false, error };
+    }
+    return { success: true, data };
+  } catch (error) {
+     console.error('Exception sending reengagement email:', error);
+     return { success: false, error };
+  }
+};
+
+export const sendNudgeEmail = async (email: string, name: string, lang: SupportedLang = 'es') => {
+  const t = emailTranslations[lang]?.nudge || emailTranslations['es'].nudge;
+
+  try {
+    const { data, error } = await resend.emails.send({
+      from: `ThunderXis <${FROM_EMAIL}>`,
+      to: [email],
+      subject: t.subject,
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <body style="${css.body}">
+          <div style="${css.container}">
+             <div style="${css.header}">
+               <h1 style="${css.brand}">THUNDERXIS</h1>
+            </div>
+            <div style="${css.content}">
+                <h2 style="${css.h1}">${t.title.replace('{name}', name)}</h2>
+                <p style="${css.p}">${t.p1}</p>
+                <p style="${css.p}">${t.p2}</p>
+                
+                <div style="text-align: center; margin: 40px 0;">
+                    <a href="https://thunderxis.store/shop" style="${css.button}">${t.cta}</a>
+                </div>
+            </div>
+             <div style="${css.footer}">
+               <p style="color: #52525b; font-size: 12px;">© ${new Date().getFullYear()} ThunderXis. Be Brave.</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `
+    });
+
+    if (error) {
+        console.error('Error sending nudge email:', error);
+        return { success: false, error };
+    }
+    return { success: true, data };
+  } catch (error) {
+     console.error('Exception sending nudge email:', error);
+     return { success: false, error };
   }
 };
 

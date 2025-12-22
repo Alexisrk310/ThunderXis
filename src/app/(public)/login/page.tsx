@@ -174,7 +174,7 @@ export default function LoginPage() {
 									<Input
 										id="email"
 										type="email"
-                                        placeholder={t('auth.email_placeholder')}
+                                        placeholder={t('auth.placeholder.email')}
                                         className="h-11 bg-background/50"
                                         disabled={loading}
                                         {...register("email")}

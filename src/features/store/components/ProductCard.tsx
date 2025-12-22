@@ -138,7 +138,7 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
         />
         
         {/* Overlay Actions */}
-        <div className="absolute inset-x-0 bottom-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300 bg-gradient-to-t from-black/80 to-transparent flex flex-col gap-2">
+        <div className="absolute inset-x-0 bottom-0 p-4 translate-y-0 lg:translate-y-full lg:group-hover:translate-y-0 transition-transform duration-300 bg-gradient-to-t from-black/80 to-transparent flex flex-col gap-2">
             
             {/* Size Selector */}
             <div className="flex justify-center gap-1 bg-black/40 p-1.5 rounded-xl backdrop-blur-md" onClick={(e) => e.preventDefault()}>
@@ -175,7 +175,7 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
                         const stock = product.stock_by_size 
                             ? (product.stock_by_size[selectedSize] || 0)
                             : (product.stock || 0)
-                        return stock > 0 ? `${stock} ${t('product.available_stock')}` : t('products.out_stock')
+                        return stock > 0 ? `${stock} ${t('product.available_stock')}` : t('product.out_of_stock')
                      })()}
                 </div>
             )}

@@ -31,6 +31,21 @@ export const emailTranslations = {
       tracking: 'Número de Guía:',
       track_btn: 'Rastrear Paquete',
       p2: 'Pronto estarás disfrutando de tu compra.'
+    },
+    reengagement: {
+      subject: '¡Te extrañamos en ThunderXis!',
+      title: '¡Hola, {name}!',
+      p1: 'Hace tiempo que no te vemos por nuestra tienda.',
+      p2: 'Hemos añadido nuevos productos exclusivos que seguro te encantarán.',
+      cta: 'Ver Nuevos Productos',
+      p3: 'Esperamos verte pronto.'
+    },
+    nudge: {
+      subject: '¿Olvidaste algo en ThunderXis?',
+      title: '¡Hola, {name}!',
+      p1: 'Notamos que nos visitaste, pero no te decidiste.',
+      p2: 'Nuestros productos vuelan. ¡No te quedes sin tu talla!',
+      cta: 'Volver a la Tienda'
     }
   },
   en: {
@@ -65,6 +80,21 @@ export const emailTranslations = {
       tracking: 'Tracking Number:',
       track_btn: 'Track Package',
       p2: 'You will be enjoying your purchase soon.'
+    },
+    reengagement: {
+      subject: 'We miss you at ThunderXis!',
+      title: 'Hello, {name}!',
+      p1: 'It\'s been a while since we saw you at our store.',
+      p2: 'We have added exclusive new products that you are sure to love.',
+      cta: 'View New Products',
+      p3: 'We hope to see you soon.'
+    },
+    nudge: {
+      subject: 'Did you forget something at ThunderXis?',
+      title: 'Hello, {name}!',
+      p1: 'We noticed you visited, but didn\'t decide yet.',
+      p2: 'Our products sell out fast. Don\'t miss your size!',
+      cta: 'Return to Store'
     }
   },
   fr: {
@@ -99,6 +129,21 @@ export const emailTranslations = {
       tracking: 'Numéro de suivi :',
       track_btn: 'Suivre le Colis',
       p2: 'Vous profiterez bientôt de votre achat.'
+    },
+    reengagement: {
+      subject: 'Vous nous manquez chez ThunderXis !',
+      title: 'Bonjour, {name} !',
+      p1: 'Cela fait un moment que nous ne vous avons pas vu sur notre boutique.',
+      p2: 'Nous avons ajouté de nouveaux produits exclusifs que vous allez adorer.',
+      cta: 'Voir les Nouveaux Produits',
+      p3: 'Nous espérons vous revoir bientôt.'
+    },
+    nudge: {
+      subject: 'Avez-vous oublié quelque chose chez ThunderXis ?',
+      title: 'Bonjour, {name} !',
+      p1: 'Nous avons remarqué votre visite, mais vous ne vous êtes pas décidé.',
+      p2: 'Nos produits partent vite. Ne manquez pas votre taille !',
+      cta: 'Retourner à la Boutique'
     }
   },
   pt: {
@@ -133,6 +178,21 @@ export const emailTranslations = {
       tracking: 'Código de Rastreio:',
       track_btn: 'Rastrear Pacote',
       p2: 'Você receberá seu pedido em breve.'
+    },
+    reengagement: {
+      subject: 'Sentimos sua falta na ThunderXis!',
+      title: 'Olá, {name}!',
+      p1: 'Faz tempo que não vemos você em nossa loja.',
+      p2: 'Adicionamos novos produtos exclusivos que você vai adorar.',
+      cta: 'Ver Novos Produtos',
+      p3: 'Esperamos ver você em breve.'
+    },
+    nudge: {
+      subject: 'Esqueceu algo na ThunderXis?',
+      title: 'Olá, {name}!',
+      p1: 'Notamos que você nos visitou, mas não se decidiu.',
+      p2: 'Nossos produtos voam. Não fique sem o seu tamanho!',
+      cta: 'Voltar para a Loja'
     }
   }
 }

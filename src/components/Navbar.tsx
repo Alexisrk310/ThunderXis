@@ -10,6 +10,7 @@ import { useLanguage } from '@/components/LanguageProvider'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase/client'
 import { LogoutModal } from '@/components/LogoutModal'
+import { useClickOutside } from '@/hooks/useClickOutside'
 
 export default function Navbar() {
   const { items, toggleCart } = useCartStore()
@@ -22,6 +23,12 @@ export default function Navbar() {
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false)
   const pathname = usePathname()
   const isAuthPage = ['/login', '/register'].includes(pathname)
+
+  const langMenuRef = React.useRef<HTMLDivElement>(null)
+  const profileMenuRef = React.useRef<HTMLDivElement>(null)
+
+  useClickOutside(langMenuRef, () => setIsLangMenuOpen(false))
+  useClickOutside(profileMenuRef, () => setIsProfileMenuOpen(false))
   
   useEffect(() => {
     const handleScroll = () => {
@@ -81,7 +88,7 @@ export default function Navbar() {
         {/* Actions */}
         <div className="flex items-center gap-4">
             {/* Language Switcher */}
-           <div className="relative hidden md:block">
+           <div className="relative hidden md:block" ref={langMenuRef}>
               <button 
                 onClick={() => setIsLangMenuOpen(!isLangMenuOpen)}
                 className={`p-2 rounded-full transition-colors flex items-center gap-2 ${textColor} ${buttonHover}`}
@@ -145,7 +152,7 @@ export default function Navbar() {
 
            {/* Auth Section with Dropdown */}
            {user ? (
-               <div className="relative">
+               <div className="relative" ref={profileMenuRef}>
                    <button 
                         onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
                         className={`flex items-center gap-2 px-3 py-1.5 rounded-full transition-all border border-transparent ${buttonHover} ${isScrolled ? 'hover:border-primary/10' : 'hover:border-white/10'}`}

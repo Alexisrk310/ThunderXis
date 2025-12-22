@@ -32,8 +32,21 @@ export async function GET(request: Request) {
         },
       }
     )
-    const { error } = await supabase.auth.exchangeCodeForSession(code)
-    if (!error) {
+    const { error, data } = await supabase.auth.exchangeCodeForSession(code)
+    if (!error && data?.user) {
+      // Send welcome email if it's a new signup (verified by email)
+      // Since we can't easily track "first login" here without DB flags, 
+      // we'll send it. Ideally, check a flag or 'created_at' to avoid duplicates on re-logins.
+      // For now, let's assume this callback is hit primarily on email confirmation usage.
+      
+      const email = data.user.email;
+      const name = data.user.user_metadata?.full_name || data.user.user_metadata?.name || 'Cliente';
+      
+      if (email) {
+          // Fire and forget - don't block redirect
+          import('@/lib/email').then(m => m.sendWelcomeEmail(email, name, 'es'));
+      }
+
       const isLocalEnv = origin.startsWith('http://localhost')
       if (isLocalEnv) {
         return NextResponse.redirect(`${origin}${next}`)

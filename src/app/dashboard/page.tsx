@@ -27,11 +27,14 @@ interface DashboardStats {
   recentOrders: Order[]
 }
 
+import { format } from 'date-fns'
+import { DatePicker } from '@/components/ui/date-picker'
+
 export default function DashboardOverview() {
   const { t } = useLanguage()
   const [timeRange, setTimeRange] = useState('Weekly')
-  const [customStartDate, setCustomStartDate] = useState('')
-  const [customEndDate, setCustomEndDate] = useState('')
+  const [customStartDate, setCustomStartDate] = useState<Date | undefined>()
+  const [customEndDate, setCustomEndDate] = useState<Date | undefined>()
   const [loading, setLoading] = useState(true)
   const [inventoryAlerts, setInventoryAlerts] = useState<{ lowStock: any[], outOfStock: any[] }>({ lowStock: [], outOfStock: [] })
   const [stats, setStats] = useState<DashboardStats>({
@@ -103,7 +106,7 @@ export default function DashboardOverview() {
       const { saveAs } = (await import('file-saver'))
 
       const workbook = new ExcelJS.Workbook()
-      const worksheet = workbook.addWorksheet('Sales Report')
+      const worksheet = workbook.addWorksheet(t('dash.sales_report') || 'Sales Report')
 
       // Define Columns
       worksheet.columns = [
@@ -154,7 +157,7 @@ export default function DashboardOverview() {
       // Generate Buffer and Save
       const buffer = await workbook.xlsx.writeBuffer()
       const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
-      saveAs(blob, `Sales_Report_${timeRange}_${new Date().toISOString().split('T')[0]}.xlsx`)
+      saveAs(blob, `${t('dash.sales_report') || 'Sales_Report'}_${timeRange}_${new Date().toISOString().split('T')[0]}.xlsx`)
 
     } catch (error) {
       console.error('Error exporting Excel:', error)
@@ -182,23 +185,19 @@ export default function DashboardOverview() {
         <div className="flex flex-col sm:flex-row gap-3 items-end sm:items-center">
           {timeRange === 'Custom' && (
             <div className="flex items-center gap-2 animate-in fade-in slide-in-from-right-5">
-              <div className="relative">
-                <Calendar className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-                <input 
-                  type="date"
-                  value={customStartDate}
-                  onChange={(e) => setCustomStartDate(e.target.value)}
-                  className="bg-background border border-border rounded-lg pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+              <div className="w-40">
+                <DatePicker 
+                    value={customStartDate}
+                    onChange={(d) => setCustomStartDate(d ? new Date(d + 'T00:00:00') : undefined)}
+                    placeholder={t('dash.start_date') || "Start Date"}
                 />
               </div>
               <span className="text-muted-foreground">-</span>
-              <div className="relative">
-                <Calendar className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-                <input 
-                  type="date"
-                  value={customEndDate}
-                  onChange={(e) => setCustomEndDate(e.target.value)}
-                  className="bg-background border border-border rounded-lg pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+              <div className="w-40">
+                 <DatePicker 
+                    value={customEndDate}
+                    onChange={(d) => setCustomEndDate(d ? new Date(d + 'T00:00:00') : undefined)}
+                    placeholder={t('dash.end_date') || "End Date"}
                 />
               </div>
             </div>

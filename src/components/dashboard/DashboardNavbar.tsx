@@ -8,6 +8,7 @@ import { useLanguage } from '@/components/LanguageProvider'
 import { useAuth } from '@/hooks/useAuth'
 import { LogoutModal } from '@/components/LogoutModal'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useClickOutside } from '@/hooks/useClickOutside'
 
 import { supabase } from '@/lib/supabase/client'
 import { useToast } from '@/components/ui/Toast'
@@ -29,6 +30,12 @@ export function DashboardNavbar({ onMenuClick }: DashboardNavbarProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [activities, setActivities] = useState<any[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
+
+  const notificationsRef = React.useRef<HTMLDivElement>(null)
+  const langMenuRef = React.useRef<HTMLDivElement>(null)
+
+  useClickOutside(notificationsRef, () => setIsNotificationsOpen(false))
+  useClickOutside(langMenuRef, () => setIsLangMenuOpen(false))
 
   useEffect(() => {
     // Fetch initial activities
@@ -72,7 +79,7 @@ export function DashboardNavbar({ onMenuClick }: DashboardNavbarProps) {
                     const actionText = newActivity.action_type === 'ORDER_UPDATE' ? t('dash.activity.order_update') : 
                                      newActivity.action_type === 'USER_UPDATE' ? t('dash.activity.user_update') : t('dash.activity.new')
                     
-                    addToast(`${actionText} por ${newActivity.actor_name}`, 'info')
+                    addToast(`${actionText} ${t('dash.activity.by')} ${newActivity.actor_name}`, 'info')
                 }
             )
             .subscribe()
@@ -157,7 +164,7 @@ export function DashboardNavbar({ onMenuClick }: DashboardNavbarProps) {
           <div className="flex items-center gap-3">
             
             {/* Notifications */}
-            <div className="relative">
+            <div className="relative" ref={notificationsRef}>
               <button 
                 onClick={() => {
                     setIsNotificationsOpen(!isNotificationsOpen)
@@ -309,11 +316,11 @@ export function DashboardNavbar({ onMenuClick }: DashboardNavbarProps) {
             </div>
 
             {/* Language Selector */}
-            <div className="relative">
+            <div className="relative" ref={langMenuRef}>
               <button 
                 onClick={() => setIsLangMenuOpen(!isLangMenuOpen)}
                 className="flex items-center gap-2 px-3 py-2 hover:bg-muted rounded-xl transition-colors"
-                title="Change Language"
+                title={t('dash.change_language')}
               >
                 <Globe className="w-5 h-5 text-muted-foreground" />
                 <span className="text-sm font-bold text-foreground hidden sm:block">
