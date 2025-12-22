@@ -6,12 +6,14 @@ import { Sidebar } from '@/components/Sidebar'
 import ProductCard from '@/features/store/components/ProductCard'
 import { motion } from 'framer-motion'
 import { useLanguage } from '@/components/LanguageProvider'
+import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase/client'
 import { Product } from '@/store/useCartStore'
 import Link from 'next/link'
 
 export default function ShopPage() {
   const { t } = useLanguage()
+  const { user } = useAuth()
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -45,7 +47,7 @@ export default function ShopPage() {
     }
 
     fetchNewArrivals()
-  }, [])
+  }, [user])
 
   return (
     <div className="min-h-screen bg-background pb-20">
