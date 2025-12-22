@@ -28,8 +28,13 @@ export default function ShopPage() {
         if (data) {
            setProducts(data as Product[])
         }
-      } catch (error) {
-        console.error('Error fetching new arrivals:', error)
+      } catch (err: any) {
+        console.error('Error fetching new arrivals:', err)
+        // Check specifically for Auth errors (JWT expired, etc)
+        const errorMessage = err?.message || 'Unknown fetch error'
+        if (errorMessage.includes('JWT') || err?.code === 'PGRST301') {
+            console.warn('Authentication token issue detected on home page')
+        }
       } finally {
         setLoading(false)
       }
