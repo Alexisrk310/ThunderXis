@@ -659,5 +659,8 @@
   "dash.end_date": "Fecha Fin",
   "dash.sales_report": "Reporte de Ventas",
   "dash.sale_price": "Precio de Oferta",
+  "newsletter.error.invalid_email": "Dirección de correo inválida",
+  "newsletter.error.already_subscribed": "Este correo ya está suscrito",
+  "newsletter.error.failed": "Error al suscribirse",
   "no_coupons": "No hay cupones disponibles"
 }
